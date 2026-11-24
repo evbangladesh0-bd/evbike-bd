@@ -18,9 +18,9 @@ const auth = getAuth(app);
 
 // ২. ডিফল্ট ডেটা (ফায়ারবেসে ডেটা না থাকলে এগুলো দেখাবে)
 let bikes = [
-    { id: '1', brand: 'Yadea', name: 'Mia', price: 86500, range: 60, speed: 50, type: 'Scooter', image: '', desc: 'A stylish electric scooter perfect for city rides.' },
-    { id: '2', brand: 'TAILG', name: 'Orca F50', price: 84990, range: 85, speed: 50, type: 'Scooter', image: '', desc: 'Long range and durable build.' },
-    { id: '3', brand: 'Walton Takyon', name: 'Leo 12Ah', price: 49850, range: 40, speed: 45, type: 'Scooter', image: '', desc: 'Budget friendly local EV.' }
+    { id: '1', brand: 'Yadea', name: 'Mia', price: 86500, range: 60, speed: 50, type: 'Scooter', image: '', desc: '' },
+    { id: '2', brand: 'TAILG', name: 'Orca F50', price: 84990, range: 85, speed: 50, type: 'Scooter', image: '', desc: '' },
+    { id: '3', brand: 'Walton Takyon', name: 'Leo 12Ah', price: 49850, range: 40, speed: 45, type: 'Scooter', image: '', desc: '' }
 ];
 
 let showrooms = [
@@ -85,6 +85,13 @@ window.openBikeModal = function(id) {
     const bike = bikes.find(b => b.id === id);
     if(!bike) return;
     
+    // অটোমেটিক ডেসক্রিপশন জেনারেটর
+    const autoDescEn = `${bike.brand} ${bike.name} — ${bike.range} km range and ${bike.speed} km/h top speed. Electric commuting is much cheaper than petrol. Test ride at your nearest showroom to check comfort and suspension.`;
+    const autoDescBn = `${bike.brand} ${bike.name} — ${bn(bike.range)} কিমি রেঞ্জ আর ${bn(bike.speed)} কিমি/ঘণ্টা টপ স্পিড। প্রতিদিনের যাতায়াতে চার্জ খরচ পেট্রোলের চেয়ে অনেক কম। শোরুমে টেস্ট রাইড নিয়ে ব্রেক, সাসপেনশন ও সিটের আরাম যাচাই করে নিন।`;
+    
+    // ইউজার যদি অ্যাডমিন প্যানেল থেকে ডেসক্রিপশন লেখে, তবে সেটা দেখাবে। নাহলে অটো ডেসক্রিপশন দেখাবে।
+    const finalDesc = bike.desc ? bike.desc : (currentLang === 'en' ? autoDescEn : autoDescBn);
+
     const modalBody = document.getElementById('bikeModalBody');
     modalBody.innerHTML = `
         <div style="height: 250px; background: #0b3c21; border-radius: 12px; margin-bottom: 20px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
@@ -110,7 +117,7 @@ window.openBikeModal = function(id) {
         </div>
         
         <h4 style="font-weight:800; margin-bottom:8px;">Description</h4>
-        <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">${bike.desc || 'No description available.'}</p>
+        <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">${finalDesc}</p>
         
         <button class="btn-primary" style="width:100%; padding:12px; border-radius:8px;" onclick="closeBikeModal(); goTo('showrooms');">Find Showrooms</button>
     `;
