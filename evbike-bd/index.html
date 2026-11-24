@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+<meta name="theme-color" content="#19c45e">
+<title>evbike.bd — বাংলাদেশের সব ইভি বাইক, শোরুম ও ম্যাপ</title>
+<meta name="description" content="বাংলাদেশের সব ইভি বাইক — দাম, রেঞ্জ, স্পেসিফিকেশন, শোরুমের ঠিকানা, ফোন ও ম্যাপ। Ride electric. Ride smart.">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07130c; --surface:#0e2115; --surface-2:#132a1c; --ink:#f2f8f3;
+  --muted:#a8bfb0; --line:#22402f; --brand:#19c45e; --brand-dark:#071b10;
+  --accent:#ffc72c; --danger:#ff6b5d; --radius:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:'Hind Siliguri','Inter',system-ui,sans-serif;line-height:1.6;font-size:15px;padding-bottom:80px}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+img{max-width:100%}
+.container{max-width:1200px;margin:0 auto;padding:0 16px}
+
+/* HEADER & LOGO */
+.header{position:sticky;top:0;z-index:1000;background:rgba(4,18,10,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;height:62px;gap:10px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.3px; cursor:pointer; user-select:none;}
+.logo img{height: 42px; border-radius: 10px;}
+.logo small{display:block;font-size:10px;font-weight:700;letter-spacing:.08em;color:#8fd9ab;margin-top:2px}
+.header-nav{display:none;gap:26px;font-weight:600;font-size:14px}
+.header-nav a{color:var(--muted)}
+.header-nav a:hover{color:var(--ink)}
+.header-actions{display:flex;gap:8px;align-items:center}
+.icon-btn{width:40px;height:40px;border-radius:11px;background:var(--surface);display:grid;place-items:center;font-size:16px;color:var(--ink)}
+.icon-btn:hover{background:var(--surface-2)}
+@media(min-width:820px){.header-nav{display:flex}}
+
+/* HERO */
+.hero{padding:44px 0 30px;background:radial-gradient(circle at 16% 18%, rgba(25,196,94,.25) 0 4px, transparent 5px),radial-gradient(circle at 82% 72%, rgba(25,196,94,.18) 0 3px, transparent 4px),linear-gradient(112deg,#04120a 0%,#0a3320 52%,#0d743b 100%)}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#8fe7ae;font-weight:700;font-size:12px;letter-spacing:.05em;margin-bottom:16px}
+.hero h1{font-size:clamp(1.9rem,5vw,3.2rem);line-height:1.15;font-weight:800;letter-spacing:-.5px;margin-bottom:14px}
+.hero h1 .hl{color:#8fe7ae}
+.hero p.lead{font-size:15px;color:rgba(255,255,255,.8);max-width:640px;margin-bottom:22px}
+.search-wrap{display:flex;align-items:center;gap:6px;background:#fff;border-radius:999px;padding:6px;max-width:640px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.search-wrap .ic{padding-left:16px;color:#64748b;font-size:16px}
+.search-wrap input{flex:1;border:none;outline:none;padding:12px 8px;font-size:15px;background:transparent;color:#0f172a;min-width:0}
+.search-wrap .btn-near{width:42px;height:42px;border-radius:50%;background:#e8f7ee;color:#0c9a4b;display:grid;place-items:center;flex-shrink:0;font-size:16px}
+.search-wrap .btn-near.active{background:#19c45e;color:#071b10}
+.quick-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;max-width:640px}
+.quick-btn{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:700}
+.quick-btn.primary{background:linear-gradient(135deg,#19c45e,#0d743b);border-color:transparent;color:#071b10}
+.quick-btn.primary .qi{background:rgba(0,0,0,.18);color:#071b10}
+.quick-btn .qi{width:36px;height:36px;border-radius:10px;background:#123b24;color:#7fe6a8;display:grid;place-items:center;font-size:15px}
+.hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:22px;max-width:640px}
+.stat-box{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:12px 8px;text-align:center}
+.stat-box strong{display:block;font-size:24px;font-weight:800;color:#fff}
+.stat-box span{font-size:11px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.05em}
+
+/* SECTIONS & GRIDS */
+.section{padding:26px 0}
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.section-head h2{font-size:clamp(1.4rem,3vw,1.9rem);font-weight:800;letter-spacing:-.3px}
+.eyebrow{color:var(--brand);font-weight:700;font-size:13px;letter-spacing:.04em;margin-bottom:4px;display:block}
+.filter-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:16px}
+.filter-row{margin-bottom:12px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chip{padding:7px 14px;border-radius:999px;border:1px solid var(--line);font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0}
+.chip.active{background:var(--brand);color:#071b10;border-color:var(--brand)}
+
+.bike-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.bike-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;}
+.bike-card .thumb{height:130px;display:grid;place-items:center;background:linear-gradient(135deg,#0b3c21,#0c9a4b 50%,#071b10);position:relative;color:#fff;font-size:56px;cursor:pointer}
+.bike-card .body{padding:14px 16px 16px;display:flex;flex-direction:column;flex:1}
+.bike-card h3{font-size:18px;font-weight:800;margin-top:4px;}
+.bike-card .price{font-size:24px;font-weight:800;margin-top:10px;}
+.bike-card .btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:auto}
+.btn-primary{background:var(--brand);color:#071b10;padding:10px;border-radius:10px;font-weight:700}
+.btn-outline{border:1px solid var(--line);color:var(--ink);padding:10px;border-radius:10px;font-weight:700}
+
+/* SHOWROOM CARDS */
+.showroom-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.sr-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:8px;position:relative}
+.sr-card .brand-tag{display:inline-flex;padding:3px 10px;background:#123b24;color:#7fe6a8;border-radius:999px;font-size:11px;font-weight:700;align-self:flex-start}
+.sr-card h3{font-size:16px;font-weight:800;line-height:1.3;}
+.sr-card .sr-area{color:var(--brand);font-weight:700;font-size:13px;}
+.sr-card .sr-line{display:flex;gap:8px;font-size:13px;color:var(--muted);}
+.sr-card .sr-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.sr-card .sr-actions a{display:flex;align-items:center;justify-content:center;padding:9px;border-radius:10px;font-size:13px;font-weight:700}
+.sr-card .sr-actions .dir{background:var(--brand);color:#071b10}
+.sr-card .sr-actions .call{border:1px solid var(--line);color:var(--ink)}
+.sr-card .sr-actions .wa{grid-column:1/-1;background:#123b24;color:#7fe6a8}
+
+/* MAP */
+.map-box{height:440px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line)}
+#map{width:100%;height:100%}
+.custom-marker{width:30px;height:30px;border-radius:50% 50% 50% 0;background:linear-gradient(135deg,#19c45e,#0d743b);transform:rotate(-45deg);border:3px solid #fff;display:grid;place-items:center;}
+.custom-marker i{transform:rotate(45deg);color:#fff;}
+
+/* MODAL & ADMIN */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);z-index:2000;overflow-y:auto;padding:16px 12px}
+.modal-overlay.show{display:flex;align-items:flex-start;justify-content:center}
+.modal-content{background:var(--surface);border-radius:var(--radius);width:100%;max-width:920px;overflow:hidden;position:relative;margin:auto;}
+.modal-close{position:absolute;right:14px;top:14px;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;z-index:5}
+.admin-input { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: white; }
+
+.footer{background:#04120a;border-top:1px solid var(--line);padding:30px 0 20px;margin-top:30px;text-align:center;color:var(--muted);font-size:13px;}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="container header-inner">
+    <!-- Logo Area: 5 Clicks to open Admin -->
+    <a href="#top" class="logo" id="mainLogo">
+      <img src="logo.png" alt="evbike.bd home" onerror="this.src='https://via.placeholder.com/42x42/0e2115/19c45e?text=EV'">
+      <span>evbike<small>.bd</small><small>Ride electric. Ride smart.</small></span>
+    </a>
+    <nav class="header-nav">
+      <a href="#bikes">মডেল</a>
+      <a href="#map-section">ম্যাপ</a>
+      <a href="#showrooms">শোরুম</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="findNearMe()" title="Near Me">📍</button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div class="container">
+    <span class="hero-badge">🌿 সব ব্র্যান্ড • সব শোরুম • এক জায়গায়</span>
+    <h1>বাংলাদেশের সব <span class="hl">ইভি বাইক</span><br>শোরুম ও ম্যাপসহ</h1>
+    <p class="lead">দাম, রেঞ্জ, স্পেসিফিকেশন দেখুন — শোরুমের ঠিকানা, ফোন, WhatsApp ও লাইভ ডিরেকশন পান এক জায়গায়।</p>
+
+    <form class="search-wrap" onsubmit="event.preventDefault(); goTo('bikes');">
+      <span class="ic">🔍</span>
+      <input id="searchInput" type="text" placeholder="ব্র্যান্ড বা মডেল — যেমন Yadea, EVE, ZEEHO…" oninput="renderBikes()">
+      <button class="btn-near" id="nearBtnHero" type="button" onclick="findNearMe()" title="Near Me">🎯</button>
+    </form>
+
+    <div class="quick-actions">
+      <button class="quick-btn primary" onclick="findNearMe()">
+        <span class="qi">🎯</span><span>Near Me</span>
+      </button>
+      <button class="quick-btn" onclick="goTo('map-section')">
+        <span class="qi">🗺️</span><span>Map View</span>
+      </button>
+      <button class="quick-btn" onclick="goTo('showrooms')">
+        <span class="qi">🏬</span><span>Showrooms</span>
+      </button>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat-box"><strong id="statBikes">—</strong><span>Bikes</span></div>
+      <div class="stat-box"><strong id="statBrands">—</strong><span>Brands</span></div>
+      <div class="stat-box"><strong id="statShowrooms">—</strong><span>Showrooms</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="bikes">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">সব মডেল • সব দাম</span>
+        <h2>আপনার বাজেটে সেরা ইভি বাইক</h2>
+      </div>
+      <span id="resultCount" style="font-size:13px;color:var(--muted)">লোড হচ্ছে…</span>
+    </div>
+    <div id="bikeGrid" class="bike-grid"></div>
+  </div>
+</section>
+
+<section class="section" id="map-section">
+  <div class="container">
+    <div class="section-head"><h2>Map View</h2></div>
+    <div class="map-box"><div id="map"></div></div>
+  </div>
+</section>
+
+<section class="section" id="showrooms">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">ঠিকানা • ফোন • WhatsApp • Direction</span>
+        <h2>কাছের শোরুমে টেস্ট রাইড নিন</h2>
+      </div>
+    </div>
+    <div id="showroomGrid" class="showroom-grid"></div>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <p>© <span id="year"></span> evbike.bd — Ride electric. Ride smart.</p>
+  </div>
+</footer>
+
+<!-- ADMIN MODAL (Hidden) -->
+<div class="modal-overlay" id="adminModal" style="display:none; z-index: 3000;">
+  <div class="modal-content" style="max-width: 400px; padding: 30px;">
+    <button class="modal-close" onclick="document.getElementById('adminModal').style.display='none'">✕</button>
+    <div id="adminLoginSection">
+      <h2 style="margin-bottom: 20px; color: var(--brand);">Admin Login</h2>
+      <input type="email" id="adminEmail" placeholder="Email" class="admin-input">
+      <input type="password" id="adminPassword" placeholder="Password" class="admin-input">
+      <button class="btn-primary" onclick="loginAdmin()" style="width: 100%;">Login</button>
+      <p id="adminError" style="color: var(--danger); font-size: 13px; margin-top: 10px; text-align: center;"></p>
+    </div>
+    <div id="adminDashboard" style="display: none;">
+      <h2 style="margin-bottom: 20px; color: var(--brand);">Welcome, Admin!</h2>
+      <p style="margin-bottom: 20px;">সফলভাবে লগইন করেছেন।</p>
+      <button class="btn-outline" onclick="logoutAdmin()" style="width: 100%;">Logout</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- MAIN DATA & LOGIC -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+  // Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyB1KRjfU1QYuVN6GCNAUybmNPpE8Qd_23E",
+    authDomain: "ev-bike-53505.firebaseapp.com",
+    projectId: "ev-bike-53505",
+    storageBucket: "ev-bike-53505.firebasestorage.app",
+    messagingSenderId: "654742888648",
+    appId: "1:654742888648:web:e7401469c0b5385c43c5fd"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  // --- ১. বাইক ডেটা ---
+  const bikes = [
+    {brand:'Yadea', name:'Mia', price:86500, range:60, speed:50, motor:800, type:'Scooter'},
+    {brand:'Yadea', name:'GT12', price:105000, range:80, speed:50, motor:1000, type:'Scooter'},
+    {brand:'TAILG', name:'Orca F50', price:84990, range:85, speed:50, motor:1000, type:'Scooter'},
+    {brand:'TAILG', name:'Green Bird A1', price:112990, range:90, speed:55, motor:1200, type:'Scooter'},
+    {brand:'Walton Takyon', name:'Leo 12Ah', price:49850, range:40, speed:45, motor:800, type:'Scooter'},
+    {brand:'Akij', name:'Samrat', price:92000, range:70, speed:50, motor:800, type:'Scooter'},
+    {brand:'REVOO', name:'A04', price:49900, range:45, speed:30, motor:350, type:'Scooter'},
+    {brand:'CFMOTO', name:'ZEEHO AE8', price:348500, range:120, speed:80, motor:4000, type:'Sport'}
+  ];
+
+  // --- ২. শোরুম ডেটা (আপনার ভেরিফাইড লিস্টের কিছু অংশ) ---
+  let showrooms = [
+    // TAILG
+    {brand:'TAILG', name:'TAILG HQ / Edison Tejgaon', area:'Tejgaon', division:'Dhaka', phone:'01325-054904', address:'246, Rangs Babylonia, Tejgaon, Dhaka 1208', lat:23.7626, lng:90.3989, verified: true},
+    {brand:'TAILG', name:'EV Town (Madani Avenue)', area:'Vatara', division:'Dhaka', phone:'01648-171613', address:'100 Feet Madani Ave, Bashundhara Bitumen Gate, Vatara, Dhaka', lat:23.8103, lng:90.4125, verified: true},
+    {brand:'TAILG', name:'JM Motors (Noakhali)', area:'Noakhali', division:'Chattogram', phone:'01885-457105', address:'White Hall Party Center, Maijdee Court, Noakhali', lat:22.8696, lng:91.0995, verified: true},
+    {brand:'TAILG', name:'Metro Ride (Khulna)', area:'Khulna', division:'Khulna', phone:'01717-202915', address:'127, KDA M. A. Bari Road, Khulna', lat:22.8158, lng:89.5636, verified: true},
+    
+    // Akij Motors
+    {brand:'Akij Motors', name:'A R M Trading Corporation', area:'Rajbari', division:'Dhaka', phone:'01317-007788', address:'Atiar Tower, Main Road, Sojonkanda, Boropul, Rajbari', lat:23.7574, lng:89.6445, verified: true},
+    {brand:'Akij Motors', name:'Al-Amin Smart Auto', area:'Narayanganj', division:'Dhaka', phone:'01715-192586', address:'55 No Shantidhara, R/A Beside Of Origin Tower, Signboard, Narayanganj', lat:23.6238, lng:90.4991, verified: true},
+    
+    // Walton Takyon
+    {brand:'Walton Takyon', name:'M/S Rita Enterprise', area:'Bogura', division:'Rajshahi', phone:'01713-727288', address:'Gohail Road, Sutrapur, Bogura Sadar, Bogura', lat:24.8465, lng:89.3773, verified: true},
+    {brand:'Walton Takyon', name:'Naim Bike Bazar', area:'Kushtia', division:'Khulna', phone:'01712-253719', address:'Upazila More, Kushtia Sadar, Kushtia-7000', lat:23.9013, lng:89.1206, verified: true},
+
+    // Green Tiger
+    {brand:'Green Tiger', name:'HK Motors', area:'Rajshahi', division:'Rajshahi', phone:'01715-587221', address:'Sadar Rajshahi, Rajshahi', lat:24.3745, lng:88.6042, verified: true},
+    {brand:'Green Tiger', name:'Expert Motors', area:'Mirpur', division:'Dhaka', phone:'01617-309812', address:'Mirpur-10, Dhaka', lat:23.8069, lng:90.3687, verified: true},
+
+    // REVOO
+    {brand:'REVOO', name:'Junainah EV', area:'Madhabpur', division:'Sylhet', phone:'01674-909665', address:'16/10 Vagdi (Dhaka Sylhet highway)', lat:24.1000, lng:91.5000, verified: true},
+    {brand:'REVOO', name:'Samira Traders', area:'Ghatail', division:'Dhaka', phone:'01926-091377', address:'College Mor, Main Road, Ghatail, Tangail', lat:24.2500, lng:89.9500, verified: true},
+
+    // CFMOTO
+    {brand:'CFMOTO / ZEEHO', name:'CFMOTO Flagship Center', area:'Mirpur 11', division:'Dhaka', phone:'01774-758808', address:'Plot:10, Road: 3, Block: A, Section: 11, Mirpur, Dhaka', lat:23.8200, lng:90.3600, verified: true},
+
+    // Pending
+    {brand:'Yadea', name:'Yadea Mirpur - Bike Heaven', area:'Mirpur', division:'Dhaka', phone:'01711-410878', address:'357/4 South Pirerbag, Mirpur, Dhaka', lat:23.7907, lng:90.3659, verified: false}
+  ];
+
+  // --- ৩. গ্লোবাল ভেরিয়েবল ---
+  let map, markers = [];
+  const bn = n => (Number(n)||0).toLocaleString('bn-BD',{maximumFractionDigits:0});
+  const priceText = n => '৳'+bn(n);
+  const telLink = phone => 'tel:+880'+String(phone).replace(/\D/g,'').replace(/^880/,'').replace(/^0/,'');
+  const dirLink = addr => 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(addr+', Bangladesh');
+
+  // --- ৪. রেন্ডারিং ফাংশন ---
+  function renderBikes() {
+    const grid = document.getElementById('bikeGrid');
+    document.getElementById('resultCount').textContent = bikes.length + 'টি মডেল';
+    grid.innerHTML = bikes.map(b => `
+      <article class="bike-card">
+        <div class="thumb">🏍️</div>
+        <div class="body">
+          <div style="font-size:11px;color:var(--brand);font-weight:800;">${b.brand}</div>
+          <h3>${b.name}</h3>
+          <div class="price">${priceText(b.price)}</div>
+          <div class="btns" style="margin-top:15px;">
+            <button class="btn-primary">বিস্তারিত</button>
+          </div>
+        </div>
+      </article>
+    `).join('');
+  }
+
+  function renderShowrooms() {
+    const grid = document.getElementById('showroomGrid');
+    grid.innerHTML = showrooms.map(s => `
+      <article class="sr-card">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span class="brand-tag">${s.brand} • ${s.division}</span>
+          ${s.verified ? '<span class="brand-tag" style="background:#19c45e;color:#071b10;">✓ যাচাইকৃত</span>' : '<span class="brand-tag" style="background:#ffc72c;color:#071b10;">যাচাই চলছে</span>'}
+        </div>
+        <h3>${s.name}</h3>
+        <div class="sr-area">${s.area}</div>
+        <div class="sr-line"><i>📍</i><span>${s.address}</span></div>
+        <div class="sr-line"><i>📞</i><span>${s.phone}</span></div>
+        <div class="sr-actions">
+          <a href="${dirLink(s.address)}" target="_blank" class="dir">🧭 Direction</a>
+          <a href="${telLink(s.phone)}" class="call">📞 কল</a>
+        </div>
+      </article>
+    `).join('');
+  }
+
+  // --- ৫. ফায়ারবেস ডেটা লোড ---
+  async function loadData() {
+    try {
+      const querySnapshot = await getDocs(collection(db, "showrooms"));
+      if(!querySnapshot.empty) {
+        showrooms = []; 
+        querySnapshot.forEach((doc) => { showrooms.push(doc.data()); });
+      }
+    } catch(e) { console.log("Firebase error, using local data."); }
+    
+    renderBikes();
+    renderShowrooms();
+    document.getElementById('statBikes').textContent = bikes.length + '+';
+    document.getElementById('statBrands').textContent = new Set(bikes.map(b=>b.brand)).size + '+';
+    document.getElementById('statShowrooms').textContent = showrooms.length + '+';
+    initMap();
+  }
+
+  // --- ৬. ম্যাপ ---
+  function initMap() {
+    map = L.map('map').setView([23.8103, 90.4125], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    const icon = L.divIcon({ className:'', html:'<div class="custom-marker"><i>⚡</i></div>', iconSize:[30,30], iconAnchor:[15,30] });
+    
+    showrooms.forEach(s => {
+      if(s.lat && s.lng) {
+        L.marker([s.lat, s.lng], {icon}).addToMap(map).bindPopup(`<b>${s.name}</b><br>${s.address}`);
+      }
+    });
+  }
+
+  // --- ৭. অ্যাডমিন লজিক ---
+  let clickCount = 0, clickTimer;
+  document.getElementById('mainLogo').addEventListener('click', (e) => {
+    clickCount++;
+    if (clickCount === 5) {
+      e.preventDefault();
+      clearTimeout(clickTimer);
+      clickCount = 0;
+      document.getElementById('adminModal').style.display = 'flex';
+    } else {
+      clearTimeout(clickTimer);
+      clickTimer = setTimeout(() => { clickCount = 0; }, 2000);
+    }
+  });
+
+  window.loginAdmin = async function() {
+    const email = document.getElementById('adminEmail').value;
+    const pass = document.getElementById('adminPassword').value;
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      document.getElementById('adminError').textContent = "";
+    } catch (e) { document.getElementById('adminError').textContent = "ভুল ইমেইল বা পাসওয়ার্ড!"; }
+  }
+  window.logoutAdmin = () => signOut(auth);
+  
+  onAuthStateChanged(auth, (user) => {
+    document.getElementById('adminLoginSection').style.display = user ? 'none' : 'block';
+    document.getElementById('adminDashboard').style.display = user ? 'block' : 'none';
+  });
+
+  window.findNearMe = () => alert("Near Me ফিচারটি লোকেশন পারমিশন চাইবে।");
+
+  document.getElementById('year').textContent = new Date().getFullYear();
+  
+  // স্টার্ট অ্যাপ
+  loadData();
+
+</script>
+</body>
+</html>
