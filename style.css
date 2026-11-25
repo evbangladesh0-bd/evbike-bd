@@ -727,3 +727,7 @@ body{background:var(--bg);color:var(--ink)}
 
 .ev-pin .dot.lg{width:40px;height:40px;border-radius:10px}
 .ev-pin .dot.lg+.lbl{top:42px}
+
+/* ম্যাপ ক্লাস্টার (কাছাকাছি শোরুম একসাথে সংখ্যা হয়ে দেখায়) */
+.marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(25,196,94,.35)}
+.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:#19c45e;color:#06280f;font-weight:800}
