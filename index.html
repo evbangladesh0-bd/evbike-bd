@@ -1,87 +1,160 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#19c45e">
-<title>evbike.bd — বাংলাদেশের সব ইভি বাইক, শোরুম ও ম্যাপ | Electric Bikes Bangladesh</title>
-<meta name="description" content="বাংলাদেশের সব ইভি বাইক — দাম, রেঞ্জ, শোরুমের ঠিকানা, ফোন, WhatsApp ও ম্যাপ। All electric bikes and showrooms in Bangladesh.">
-<meta property="og:title" content="evbike.bd — Bangladesh's Electric Bike Directory">
-<meta property="og:image" content="https://evbike.bd/logo.png">
-<link rel="icon" type="image/png" href="logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
-<link rel="stylesheet" href="style.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+    <title>evbike.bd — Bangladesh EV Bike Directory</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-<header class="header"><div class="container header-inner">
-  <a href="#top" class="logo" id="mainLogo"><img src="logo.png" alt="evbike.bd"></a>
-  <nav class="header-nav"><a href="#bikes" data-i="nav_bikes">বাইক</a><a href="#map-section" data-i="nav_map">ম্যাপ</a><a href="#showrooms" data-i="nav_show">শোরুম</a></nav>
-  <div class="header-actions"><button class="lang-btn" id="langBtn" data-act="lang">English</button><button class="icon-btn" data-act="near" title="Near Me">📍</button></div>
-</div></header>
-<main id="top">
-<section class="hero"><div class="container">
-  <span class="hero-badge" data-i="badge">🌿 সব ব্র্যান্ড • সব শোরুম • এক জায়গায়</span>
-  <h1 data-i="h1" data-html>বাংলাদেশের সব <span class="hl">ইভি বাইক</span><br>শোরুম ও ম্যাপসহ</h1>
-  <p class="lead" data-i="lead">দাম ও রেঞ্জ দেখুন — শোরুমের ঠিকানা, ফোন, WhatsApp ও ডিরেকশন পান এক জায়গায়।</p>
-  <form class="search-wrap" id="searchForm"><span class="ic">🔍</span><input id="searchInput" type="search" data-ip="ph" placeholder="ব্র্যান্ড বা মডেল — যেমন Yadea, TAILG…"><button class="btn-near" type="button" data-act="near">🎯</button></form>
-  <div class="quick-actions">
-    <button class="quick-btn primary" data-act="near"><span class="qi">🎯</span>Near Me</button>
-    <button class="quick-btn" data-act="goto" data-id="map-section"><span class="qi">🗺️</span>Map</button>
-    <button class="quick-btn" data-act="goto" data-id="showrooms"><span class="qi">🏬</span><span data-i="nav_show">শোরুম</span></button>
-  </div>
-  <div class="hero-stats">
-    <div class="stat-box"><strong id="statBikes">—</strong><span data-i="nav_bikes">বাইক</span></div>
-    <div class="stat-box"><strong id="statBrands">—</strong><span data-i="brands">ব্র্যান্ড</span></div>
-    <div class="stat-box"><strong id="statShowrooms">—</strong><span data-i="nav_show">শোরুম</span></div>
-  </div>
-</div></section>
+    <header class="header">
+        <div class="container header-inner">
+            <div class="logo" id="mainLogo">
+                <img src="logo.png" alt="evbike.bd">
+                <div class="logo-text"><span>evbike<small>.bd</small></span><span>Ride electric. Ride smart.</span></div>
+            </div>
+            <nav class="header-nav">
+                <a href="#bikes" data-i="nav_bikes">বাইক</a>
+                <a href="#map-sec" data-i="nav_map">ম্যাপ</a>
+                <a href="#showrooms" data-i="nav_show">শোরুম</a>
+            </nav>
+            <div class="header-actions">
+                <button class="lang-btn" id="langBtn" data-act="lang">English</button>
+                <button class="icon-btn" data-act="near">📍</button>
+            </div>
+        </div>
+    </header>
 
-<section class="section" id="bikes"><div class="container">
-  <div class="section-head"><div><span class="eyebrow" data-i="eb_bikes">সব মডেল • সব দাম</span><h2 data-i="t_bikes">আপনার বাজেটে সেরা ইভি বাইক</h2></div><span class="count" id="resultCount"></span></div>
-  <div class="filter-panel">
-    <span class="lbl" data-i="lbl_brand">ব্র্যান্ড</span><div class="filter-row" id="brandChips"></div>
-    <span class="lbl" data-i="lbl_price">দাম</span><div class="filter-row" id="priceChips"></div>
-    <span class="lbl" data-i="lbl_type">ধরন</span><div class="filter-row" id="typeChips"></div>
-  </div>
-  <div id="bikeGrid" class="bike-grid"></div>
-</div></section>
+    <main>
+        <section class="hero">
+            <div class="container">
+                <span class="hero-badge" data-i="badge"></span>
+                <h1 data-i="h1" data-html="1"></h1>
+                <p class="lead" data-i="lead"></p>
+                <form class="search-wrap" id="searchForm">
+                    <span class="ic">🔍</span>
+                    <input type="text" id="searchInput" data-ip="ph" placeholder="Search brand...">
+                    <button type="button" class="btn-near" data-act="near">🎯</button>
+                </form>
+                <div style="margin-top: 15px;">
+                    <button class="btn-primary" style="padding: 10px 20px; border-radius: 8px;" data-act="open-listing">+ Add Your Showroom (ফ্রি লিস্টিং)</button>
+                </div>
+                <div class="quick-actions">
+                    <button class="quick-btn primary" data-act="near"><span class="qi">🎯</span>Near Me</button>
+                    <button class="quick-btn" data-act="goto" data-id="map-sec"><span class="qi">🗺️</span>Map View</button>
+                    <button class="quick-btn" data-act="goto" data-id="showrooms"><span class="qi">🏬</span>Showrooms</button>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-box"><strong id="statBikes">-</strong><span data-i="nav_bikes">Bikes</span></div>
+                    <div class="stat-box"><strong id="statBrands">-</strong><span data-i="brands">Brands</span></div>
+                    <div class="stat-box"><strong id="statShowrooms">-</strong><span data-i="nav_show">Showrooms</span></div>
+                </div>
+            </div>
+        </section>
 
-<section class="section" id="map-section"><div class="container">
-  <div class="section-head"><div><span class="eyebrow" data-i="eb_map">লাইভ ম্যাপ</span><h2>Map</h2></div></div>
-  <div class="banner" id="nearBanner"><span data-i="banner">🎯 আপনার অবস্থান থেকে কাছের শোরুম আগে দেখানো হচ্ছে</span><button data-act="near">✕</button></div>
-  <div class="map-box"><div id="map"></div></div>
-  <div class="legend" id="mapLegend"></div>
-</div></section>
+        <section class="section" id="bikes">
+            <div class="container">
+                <div class="section-head">
+                    <div><span class="eyebrow" data-i="eb_bikes">All Models</span><h2 data-i="t_bikes">Best EV Bikes</h2></div>
+                    <span class="count" id="resultCount"></span>
+                </div>
+                <div class="filter-panel">
+                    <span class="lbl" data-i="lbl_brand">Brand</span><div class="filter-row" id="brandChips"></div>
+                    <span class="lbl" data-i="lbl_price">Price</span><div class="filter-row" id="priceChips"></div>
+                    <span class="lbl" data-i="lbl_type">Type</span><div class="filter-row" id="typeChips"></div>
+                </div>
+                <div class="bike-grid" id="bikeGrid"></div>
+            </div>
+        </section>
 
-<section class="section" id="showrooms"><div class="container">
-  <div class="section-head"><div><span class="eyebrow" data-i="eb_show">ঠিকানা • ফোন • WhatsApp • Direction</span><h2 data-i="t_show">কাছের শোরুমে টেস্ট রাইড নিন</h2></div><span class="count" id="showroomCount"></span></div>
-  <div class="filter-panel"><div class="filter-row" id="divChips"></div></div>
-  <div id="showroomGrid" class="showroom-grid"></div>
-  <button class="more-btn" id="moreBtn" data-act="more" data-i="more" style="display:none">আরো দেখুন</button>
-</div></section>
-</main>
+        <section class="section" id="map-sec">
+            <div class="container">
+                <div class="section-head"><div><span class="eyebrow" data-i="eb_map">Live Map</span><h2>Map View</h2></div></div>
+                <div class="banner" id="nearBanner"><span data-i="banner">🎯 Showing nearest</span> <button data-act="near">✕</button></div>
+                <div class="map-box"><div id="map"></div></div>
+                <div class="legend" id="mapLegend"></div>
+            </div>
+        </section>
 
-<footer class="footer"><div class="container"><p>© <span id="year"></span> evbike.bd — Ride electric. Ride smart. &nbsp;•&nbsp; <a href="https://wa.me/8801715331303" rel="noopener">WhatsApp 01715-331303</a></p></div></footer>
+        <section class="section" id="showrooms">
+            <div class="container">
+                <div class="section-head">
+                    <div><span class="eyebrow" data-i="eb_show">Address</span><h2 data-i="t_show">Showrooms</h2></div>
+                    <span class="count" id="showroomCount"></span>
+                </div>
+                <div class="filter-panel"><div class="filter-row" id="divChips"></div></div>
+                <div class="showroom-grid" id="showroomGrid"></div>
+                <button class="btn-outline more-btn" data-act="more" id="moreBtn" style="display:none;margin:20px auto;" data-i="more">Show More</button>
+            </div>
+        </section>
+    </main>
 
-<div class="modal-overlay" id="bikeModal" data-act="close"><div class="modal-content" id="bikeModalBody"></div></div>
-<div class="modal-overlay" id="adminModal" data-act="close"><div class="modal-content" style="max-width:440px">
-  <button class="modal-close" data-act="close">✕</button>
-  <div id="adminLogin"><h2 class="fb-title">Admin Login</h2>
-    <input class="admin-input" id="adminEmail" type="email" placeholder="Email" autocomplete="username">
-    <input class="admin-input" id="adminPass" type="password" placeholder="Password" autocomplete="current-password">
-    <button class="btn-primary fb-btn" data-fb="login">Login</button><p id="adminErr" class="fb-msg"></p></div>
-  <div id="adminDash" style="display:none"></div>
-</div></div>
-<div class="toast" id="toast"></div>
+    <footer class="footer">
+        <div class="container"><p>© <span id="year"></span> evbike.bd - All rights reserved.</p></div>
+    </footer>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-<script src="data.js"></script>
-<script type="module" src="app.js"></script>
+    <!-- Modals -->
+    <div class="modal-overlay" id="bikeModal"><div class="modal-content" id="bikeModalBody"></div></div>
+    
+    <div class="modal-overlay" id="adminModal">
+        <div class="modal-content" style="max-width:600px;">
+            <button class="modal-close" data-act="close">✕</button>
+            <div id="adminLogin">
+                <h2 class="fb-title">Admin Login</h2>
+                <input type="email" id="admEmail" class="admin-input" placeholder="Email">
+                <input type="password" id="admPass" class="admin-input" placeholder="Password">
+                <button class="btn-primary fb-btn" id="admLoginBtn">Login</button>
+                <p class="fb-msg" id="admMsg"></p>
+            </div>
+            <div id="adminPanel" style="display:none;">
+                <h2 class="fb-title">Admin Panel</h2>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <button class="btn-primary" style="flex:1;padding:10px;border-radius:8px;" id="tabBikes">Bikes</button>
+                    <button class="btn-outline" style="flex:1;padding:10px;border-radius:8px;" id="tabRequests">Requests</button>
+                    <button class="btn-outline" style="flex:1;padding:10px;border-radius:8px;" id="admLogoutBtn">Logout</button>
+                </div>
+                <div id="adminContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Showroom Modal -->
+    <div class="modal-overlay" id="listingModal">
+        <div class="modal-content" style="max-width:500px;">
+            <button class="modal-close" data-act="close">✕</button>
+            <h2 class="fb-title">Add Your Showroom</h2>
+            <p style="font-size:13px; color:var(--muted); margin-bottom:15px;">ফ্রিতে আপনার শোরুম যোগ করুন। আমরা যাচাই করে অ্যাপ্রুভ করব।</p>
+            <form id="listingForm">
+                <label class="fb-lbl">Showroom Name *</label><input type="text" id="lsName" class="admin-input" required>
+                <label class="fb-lbl">Brand *</label><input type="text" id="lsBrand" class="admin-input" required>
+                <label class="fb-lbl">Phone *</label><input type="text" id="lsPhone" class="admin-input" required>
+                <label class="fb-lbl">Address *</label><input type="text" id="lsAddress" class="admin-input" required>
+                <label class="fb-lbl">Area/City *</label><input type="text" id="lsArea" class="admin-input" required>
+                <label class="fb-lbl">Division *</label>
+                <select id="lsDivision" class="admin-input" required>
+                    <option value="Dhaka">Dhaka</option><option value="Chattogram">Chattogram</option><option value="Rajshahi">Rajshahi</option><option value="Khulna">Khulna</option><option value="Barishal">Barishal</option><option value="Sylhet">Sylhet</option><option value="Rangpur">Rangpur</option><option value="Mymensingh">Mymensingh</option>
+                </select>
+                <button type="submit" class="btn-primary fb-btn">Submit for Approval</button>
+                <p class="fb-msg" id="lsMsg"></p>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    
+    <!-- Floating WhatsApp -->
+    <a href="https://wa.me/8801715331303" target="_blank" class="wa-fab" title="Chat on WhatsApp">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width:35px; height:35px;">
+    </a>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script src="data.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 </html>
