@@ -72,6 +72,16 @@ const srCard = s => `<article class="sr-card ${s._d!=null&&s._d<15?'near':''}">
   ${s.phone?`<div class="sr-line"><i>📞</i><a href="${tel(s.phone)}">${esc(s.phone)}</a></div>`:''}
   <div class="sr-actions"><a class="dir" href="${dir(s)}" target="_blank" rel="noopener">🧭 Direction</a>${s.phone?`<a class="call" href="${tel(s.phone)}">📞 ${L('কল','Call')}</a>`:''}${wa(s.phone)?`<a class="wa" href="${wa(s.phone)}" target="_blank" rel="noopener">💬 WhatsApp</a>`:''}</div></article>`;
 const dist = (a,b,c,d) => { const r=x=>x*Math.PI/180, h=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2; return 12742*Math.asin(Math.sqrt(h)); };
+/* ---------- ম্যাপ পিন (ব্র্যান্ডের রঙ + নাম/লোগো) ---------- */
+const brandColor = b => { let h = 0; for(const c of b) h = (h*31 + c.charCodeAt(0)) % 360; return `hsl(${h} 65% 38%)`; };
+const initials = b => b.replace(/[^A-Za-z0-9 ]/g,'').split(' ').filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase() || '?';
+function pinIcon(s){
+  const logo = typeof BRAND_LOGOS !== 'undefined' && BRAND_LOGOS[s.brand], ini = esc(initials(s.brand));
+  const inner = logo ? `<img src="${esc(logo)}" alt="" onerror="this.replaceWith(document.createTextNode('${ini}'))">` : ini;
+  const z = logo ? 40 : 30;
+  return L_.divIcon({className:'ev-pin', html:`<span class="dot ${logo?'lg':''}" style="background:${brandColor(s.brand)}">${inner}</span><span class="lbl">${esc(s.brand)}</span>`, iconSize:[z,z], iconAnchor:[z/2,z/2], popupAnchor:[0,-z/2]});
+}
+
 let map, layer;
 function renderShowrooms(){
   let l = showrooms.filter(s => st.div==='all' || s.division===st.div);
@@ -80,9 +90,10 @@ function renderShowrooms(){
   $('showroomGrid').innerHTML = l.slice(0, st.limit).map(srCard).join('') || `<div class="empty">${L('কোনো শোরুম নেই','No showrooms')}</div>`;
   $('moreBtn').style.display = l.length > st.limit ? 'block' : 'none';
   layer.clearLayers();
-  l.forEach(s => { if(isFinite(s.lat)&&isFinite(s.lng)) L_.circleMarker([s.lat,s.lng],{radius:6,color:'#fff',weight:1.5,fillColor:'#19c45e',fillOpacity:.95}).bindPopup(`<b>${esc(s.name)}</b><br>${esc(s.address)}<br><a href="${dir(s)}" target="_blank" rel="noopener">Direction</a>${s.phone?`<a href="${tel(s.phone)}">Call</a>`:''}${wa(s.phone)?`<a href="${wa(s.phone)}" target="_blank" rel="noopener">WhatsApp</a>`:''}`).addTo(layer); });
+  l.forEach(s => { if(isFinite(s.lat)&&isFinite(s.lng)) L_.marker([s.lat,s.lng],{icon:pinIcon(s)}).bindPopup(`<b>${esc(s.name)}</b><br>${esc(s.address)}<br><a href="${dir(s)}" target="_blank" rel="noopener">Direction</a>${s.phone?`<a href="${tel(s.phone)}">Call</a>`:''}${wa(s.phone)?`<a href="${wa(s.phone)}" target="_blank" rel="noopener">WhatsApp</a>`:''}`).addTo(layer); });
 }
 function renderAll(){
+  $('mapLegend').innerHTML = [...new Set(showrooms.map(s=>s.brand))].sort().map(b=>`<span><i style="background:${brandColor(b)}"></i>${esc(b)}</span>`).join('');
   renderChips(); renderBikes(); renderShowrooms();
   $('statBikes').textContent = nf(bikes.length)+'+'; $('statBrands').textContent = nf(new Set(bikes.map(b=>b.brand)).size)+'+'; $('statShowrooms').textContent = nf(showrooms.length)+'+';
 }
@@ -142,6 +153,7 @@ $('mainLogo').addEventListener('click', e => { clicks++; clearTimeout(timer); if
 const L_ = window.L; /* Leaflet (নামের সংঘর্ষ এড়াতে) */
 $('year').textContent = new Date().getFullYear();
 map = L_.map('map',{center:[23.8,90.4],zoom:7}); L_.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map); layer = L_.layerGroup().addTo(map);
+const labels = () => $('map').classList.toggle('show-labels', map.getZoom() >= 9); map.on('zoomend', labels); labels();
 const refresh = async () => { const r = await loadRemote(); bikes = merge(BIKES, r.bikes); if(r.showrooms.length) showrooms = r.showrooms; renderAll(); };
 initAdmin({getBikes: () => bikes, refresh});
 applyLang(); refresh();
