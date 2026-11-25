@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
-    <title>evbike.bd — Bangladesh EV Bike Directory</title>
+    <title>evbike.bd — Smart EV Bike Directory</title>
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
@@ -14,9 +14,9 @@
 <body>
     <header class="header">
         <div class="container header-inner">
-            <div class="logo" id="mainLogo">
-                <img src="logo.png" alt="evbike.bd">
-                <div class="logo-text"><span>evbike<small>.bd</small></span><span>Ride electric. Ride smart.</span></div>
+            <!-- শুধু লোগো আইকন, পাশে কোনো লেখা নেই -->
+            <div class="logo" id="mainLogo" style="padding: 5px;">
+                <img src="logo.png" alt="evbike.bd" style="height: 50px; width: auto; border-radius: 10px;">
             </div>
             <nav class="header-nav">
                 <a href="#bikes" data-i="nav_bikes">বাইক</a>
@@ -34,7 +34,7 @@
         <section class="hero">
             <div class="container">
                 <span class="hero-badge" data-i="badge"></span>
-                <h1 data-i="h1" data-html="1"></h1>
+                <h1 data-i="h1" data-html="1">The Smart Way to Explore <span class="hl">EV Bikes</span><br>All Showrooms in One Place</h1>
                 <p class="lead" data-i="lead"></p>
                 <form class="search-wrap" id="searchForm">
                     <span class="ic">🔍</span>
