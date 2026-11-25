@@ -3,7 +3,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
-    <title>evbike.bd — Smart EV Bike Directory</title>
+    <title>ইভি বাইক বাংলাদেশ: দাম, রেঞ্জ ও যাচাইকৃত শোরুম | evbike.bd</title>
+    <meta name="description" content="বাংলাদেশের সব ইভি বাইক ও ইলেকট্রিক স্কুটারের দাম, রেঞ্জ ও স্পেক তুলনা করুন। সারা দেশের যাচাইকৃত শোরুমের ঠিকানা, ফোন ও ম্যাপ এক জায়গায় — Yadea, TAILG, Walton, Akij-সহ ১৮টি ব্র্যান্ড।">
+    <link rel="canonical" href="https://evbike.bd/">
+    <meta name="theme-color" content="#19c45e">
+    <meta property="og:type" content="website"><meta property="og:site_name" content="evbike.bd">
+    <meta property="og:title" content="ইভি বাইক বাংলাদেশ: দাম, রেঞ্জ ও যাচাইকৃত শোরুম | evbike.bd"><meta property="og:description" content="বাংলাদেশের সব ইভি বাইক ও ইলেকট্রিক স্কুটারের দাম, রেঞ্জ ও স্পেক তুলনা করুন। সারা দেশের যাচাইকৃত শোরুমের ঠিকানা, ফোন ও ম্যাপ এক জায়গায় — Yadea, TAILG, Walton, Akij-সহ ১৮টি ব্র্যান্ড।">
+    <meta property="og:url" content="https://evbike.bd/"><meta property="og:image" content="https://evbike.bd/logo.png">
+    <meta name="twitter:card" content="summary">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","name":"evbike.bd","url":"https://evbike.bd/","inLanguage":"bn","description":"বাংলাদেশের সব ইভি বাইক ও ইলেকট্রিক স্কুটারের দাম, রেঞ্জ ও স্পেক তুলনা করুন। সারা দেশের যাচাইকৃত শোরুমের ঠিকানা, ফোন ও ম্যাপ এক জায়গায় — Yadea, TAILG, Walton, Akij-সহ ১৮টি ব্র্যান্ড।"},{"@type":"Organization","name":"evbike.bd","url":"https://evbike.bd/","logo":"https://evbike.bd/logo.png","sameAs":["https://evcharge.bd","https://evcharger.bd","https://evcar.bd"]}]}</script>
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
@@ -24,6 +32,7 @@
                 <a href="#showrooms" data-i="nav_show">শোরুম</a>
             </nav>
             <div class="header-actions">
+                <details class="sites"><summary>আমাদের সাইট</summary><div><a href="https://evcharge.bd" target="_blank" rel="noopener">চার্জিং স্টেশন</a><a href="https://evcharger.bd" target="_blank" rel="noopener">চার্জার কিনুন</a><a href="https://evcar.bd" target="_blank" rel="noopener">ইভি কার</a></div></details>
                 <button class="lang-btn" id="langBtn" data-act="lang">English</button>
                 <button class="icon-btn" data-act="near">📍</button>
             </div>
@@ -33,16 +42,16 @@
     <main>
         <section class="hero">
             <div class="container">
-                <span class="hero-badge" data-i="badge"></span>
-                <h1 data-i="h1" data-html="1">The Smart Way to Explore <span class="hl">EV Bikes</span><br>All Showrooms in One Place</h1>
-                <p class="lead" data-i="lead"></p>
+                <span class="hero-badge" data-i="badge">🌿 যাচাইকৃত শোরুম • সব ব্র্যান্ড • এক জায়গায়</span>
+                <h1 data-i="h1" data-html="1">বাংলাদেশের সব <span class="hl">ইভি বাইক</span>,<br>দাম ও যাচাইকৃত শোরুম এক জায়গায়</h1>
+                <p class="lead" data-i="lead">ইলেকট্রিক বাইক ও স্কুটারের দাম, রেঞ্জ আর স্পিড তুলনা করুন। পেট্রলের খরচ বাঁচান, কাছের যাচাইকৃত শোরুমে টেস্ট রাইড নিন, কল বা WhatsApp-এ সরাসরি কথা বলুন।</p>
                 <form class="search-wrap" id="searchForm">
                     <span class="ic">🔍</span>
                     <input type="text" id="searchInput" data-ip="ph" placeholder="Search brand...">
                     <button type="button" class="btn-near" data-act="near">🎯</button>
                 </form>
                 <div style="margin-top: 15px;">
-                    <button class="btn-primary" style="padding: 10px 20px; border-radius: 8px;" data-act="open-listing">+ Add Your Showroom (ফ্রি লিস্টিং)</button>
+                    <button class="btn-primary" style="padding: 10px 20px; border-radius: 8px;" data-act="open-listing">+ আপনার শোরুম যোগ করুন, ফ্রি</button>
                 </div>
                 <div class="quick-actions">
                     <button class="quick-btn primary" data-act="near"><span class="qi">🎯</span>Near Me</button>
@@ -92,10 +101,25 @@
                 <button class="btn-outline more-btn" data-act="more" id="moreBtn" style="display:none;margin:20px auto;" data-i="more">Show More</button>
             </div>
         </section>
+    <section class="section" id="about"><div class="container">
+            <div class="section-head"><div><h2>বাংলাদেশে ইভি বাইক: কেনার আগে যা জানা দরকার</h2></div></div>
+            <div class="faq">
+                <details open><summary>ইভি বাইকের দাম কত?</summary><p>আমাদের তালিকায় ইলেকট্রিক স্কুটার ও বাইকের আনুমানিক দাম প্রায় ৫০ হাজার টাকা থেকে শুরু। জনপ্রিয় স্কুটার সাধারণত ৫০ হাজার থেকে দেড় লাখ টাকার মধ্যে পাওয়া যায়, আর স্পোর্ট ও মোটরসাইকেল মডেলের দাম দুই লাখ টাকা থেকে কয়েক লাখ পর্যন্ত। দাম বদলাতে পারে, তাই শোরুমে নিশ্চিত করে নিন।</p></details>
+                <details><summary>একবার চার্জে কত কিলোমিটার চলে?</summary><p>মডেলভেদে প্রায় ৪০ থেকে ২০০ কিমি। এটি কোম্পানির দাবি করা রেঞ্জ; রাস্তা, ওজন ও চালানোর ধরনে বাস্তব রেঞ্জ কমবেশি হয়।</p></details>
+                <details><summary>ইভি বাইক কেনার আগে কী দেখব?</summary><p>ব্যাটারির ধরন ও ওয়ারেন্টি, সার্ভিস সেন্টার, স্টক এবং দাম লিখিতভাবে নিশ্চিত করুন। সম্ভব হলে টেস্ট রাইড নিন।</p></details>
+                <details><summary>কাছের যাচাইকৃত শোরুম কীভাবে খুঁজব?</summary><p>ওপরের 📍 বাটনে চাপ দিয়ে লোকেশন দিন, কাছের শোরুম আগে দেখাবে। বিভাগ ও ব্র্যান্ড ধরেও খুঁজতে পারেন। বাসা বা পথে চার্জের জন্য <a href="https://evcharge.bd">চার্জিং স্টেশন</a> ও <a href="https://evcharger.bd">চার্জার</a> দেখুন।</p></details>
+            </div></div></section>
+        <section class="section" id="family"><div class="container">
+            <div class="section-head"><div><h2>ইভি নিয়ে আরও যা লাগবে</h2></div></div>
+            <div class="eco-grid">
+                <a class="eco-card" href="https://evcharge.bd" target="_blank" rel="noopener"><b>চার্জিং স্টেশন খুঁজুন</b><span>সারা দেশের ইভি চার্জিং স্টেশন ও ম্যাপ</span></a>
+                <a class="eco-card" href="https://evcharger.bd" target="_blank" rel="noopener"><b>চার্জার কিনুন</b><span>হোম, কমার্শিয়াল ও DC ফাস্ট চার্জার</span></a>
+                <a class="eco-card" href="https://evcar.bd" target="_blank" rel="noopener"><b>ইভি কার দেখুন</b><span>বাংলাদেশে পাওয়া ইলেকট্রিক গাড়ি</span></a>
+            </div></div></section>
     </main>
 
     <footer class="footer">
-        <div class="container"><p>© <span id="year"></span> evbike.bd - All rights reserved.</p></div>
+        <div class="container"><p class="flinks"><a href="https://evcharge.bd" target="_blank" rel="noopener">চার্জিং স্টেশন</a><a href="https://evcharger.bd" target="_blank" rel="noopener">চার্জার</a><a href="https://evcar.bd" target="_blank" rel="noopener">ইভি কার</a></p><p>© <span id="year"></span> evbike.bd - All rights reserved.</p></div>
     </footer>
 
     <!-- Modals -->
