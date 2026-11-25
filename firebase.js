@@ -1,6 +1,6 @@
 // firebase.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, addDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, getDoc, doc, updateDoc, deleteDoc, addDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -28,107 +28,118 @@ export async function loadRemote(){
     return { bikes, showrooms };
 }
 
-// লিস্টিং জমা দেওয়া
-export async function submitListing(data) {
+// Listing submit (whitelisted fields only)
+export async function submitListing(d) {
+    const s = (k, n) => String(d[k] ?? '').trim().slice(0, n);
     return await addDoc(collection(db, "applications"), {
-        ...data, status: 'pending', date: new Date().toISOString()
+        name: s('name', 100), brand: s('brand', 60), phone: s('phone', 20),
+        address: s('address', 200), area: s('area', 80), division: s('division', 30),
+        status: 'pending', date: new Date().toISOString()
     });
 }
 
-// অ্যাডমিন প্যানেল
+// Admin panel
+let ctx = { getBikes: () => [], refresh: async () => {} };
+const $ = id => document.getElementById(id);
+const content = () => $('adminContent');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
 export function initAdmin({ getBikes, refresh }) {
-    const $ = id => document.getElementById(id);
-    let isLogin = false;
-
-    // Login
+    ctx = { getBikes, refresh };
     $('admLoginBtn').addEventListener('click', async () => {
-        try {
-            await signInWithEmailAndPassword(auth, $('admEmail').value, $('admPass').value);
-        } catch(e) { $('admMsg').textContent = e.message; }
+        try { await signInWithEmailAndPassword(auth, $('admEmail').value, $('admPass').value); }
+        catch (e) { $('admMsg').textContent = e.message; }
     });
-
-    // Logout
     $('admLogoutBtn').addEventListener('click', () => signOut(auth));
-
-    // Tabs
-    $('tabBikes').addEventListener('click', () => renderAdminBikes(getBikes(), refresh));
-    $('tabRequests').addEventListener('click', () => renderAdminRequests(refresh));
-
-    // Auth State
+    $('tabBikes').addEventListener('click', renderAdminBikes);
+    $('tabRequests').addEventListener('click', renderAdminRequests);
     onAuthStateChanged(auth, user => {
-        isLogin = !!user;
-        $('adminLogin').style.display = isLogin ? 'none' : 'block';
-        $('adminPanel').style.display = isLogin ? 'block' : 'none';
-        if(isLogin) renderAdminBikes(getBikes(), refresh);
+        const on = !!user;
+        $('adminLogin').style.display = on ? 'none' : 'block';
+        $('adminPanel').style.display = on ? 'block' : 'none';
+        if (on) renderAdminBikes();
     });
 }
 
-async function renderAdminBikes(bikes, refresh) {
-    const content = document.getElementById('adminContent');
-    content.innerHTML = bikes.map(b => `
-        <div class="fb-row">
-            <span>${b.brand} ${b.name}</span>
-            <button class="btn-primary" onclick="editBike('${b.id}')">Edit</button>
-        </div>
-    `).join('');
+function renderAdminBikes() {
+    const bikes = ctx.getBikes().slice().sort((a, b) => (a.brand + a.name).localeCompare(b.brand + b.name));
+    content().innerHTML = `<button class="btn-primary fb-btn" onclick="editBike('')">+ নতুন বাইক</button>` +
+        bikes.map(b => `<div class="fb-row"><span>${esc(b.brand)} ${esc(b.name)} <small>৳${esc(b.price)}</small></span>
+            <button class="btn-primary" onclick="editBike('${esc(b.id)}')">Edit</button></div>`).join('');
 }
+window.renderAdminBikes = renderAdminBikes;
 
-window.editBike = async function(id) {
-    const b = window.BIKES.find(x => x.id === id);
-    if(!b) return;
-    const price = prompt("New Price:", b.price);
-    if(price) {
-        try {
-            await updateDoc(doc(db, "bikes", id), { price: Number(price) });
-            alert("Updated!"); location.reload();
-        } catch(e) { alert("Error: " + e.message); }
-    }
-}
+window.editBike = function (id) {
+    const b = ctx.getBikes().find(x => x.id === id) || { type: 'Scooter' };
+    const f = (k, label, type = 'text') => `<label class="fb-lbl">${label}</label><input class="admin-input" id="eb_${k}" type="${type}" value="${esc(b[k])}">`;
+    content().innerHTML = `${f('brand', 'Brand')}${f('name', 'Name')}${f('price', 'Price (৳)', 'number')}${f('range', 'Range (km)', 'number')}${f('speed', 'Top speed (km/h)', 'number')}${f('motor', 'Motor (W)', 'number')}
+        <label class="fb-lbl">Type</label><select class="admin-input" id="eb_type">${['Scooter', 'Sport', 'Motorcycle'].map(t => `<option ${b.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+        ${f('image', 'Image URL (https://...)', 'url')}
+        <label class="fb-lbl">Description</label><textarea class="admin-input" id="eb_desc" rows="3">${esc(b.desc)}</textarea>
+        <button class="btn-primary fb-btn" onclick="saveBike('${esc(id)}')">Save</button>
+        <button class="btn-outline fb-btn" onclick="renderAdminBikes()">Cancel</button>
+        ${id ? `<button class="btn-outline fb-btn" style="color:var(--danger)" onclick="hideBike('${esc(id)}')">এই বাইক লুকান</button>` : ''}
+        <p class="fb-msg" id="ebMsg"></p>`;
+};
 
-async function renderAdminRequests(refresh) {
-    const content = document.getElementById('adminContent');
-    content.innerHTML = "Loading...";
+window.saveBike = async function (id) {
+    const v = k => $('eb_' + k).value.trim();
+    const data = { brand: v('brand'), name: v('name'), type: v('type'), image: v('image'), desc: v('desc'),
+        price: Number(v('price')), range: Number(v('range')), speed: Number(v('speed')), motor: Number(v('motor')) };
+    if (!data.brand || !data.name || !(data.price > 0)) return $('ebMsg').textContent = 'Brand, name ও price দিন';
+    if (data.image && !/^https:\/\//.test(data.image)) return $('ebMsg').textContent = 'ছবির লিংক https:// দিয়ে শুরু হতে হবে';
+    try {
+        if (id) await setDoc(doc(db, "bikes", id), data, { merge: true });
+        else await addDoc(collection(db, "bikes"), data);
+        await ctx.refresh(); renderAdminBikes();
+    } catch (e) { $('ebMsg').textContent = 'Error: ' + e.message; }
+};
+
+window.hideBike = async function (id) {
+    if (!confirm('এই বাইক সাইট থেকে লুকাবেন?')) return;
+    try { await setDoc(doc(db, "bikes", id), { deleted: true }, { merge: true }); await ctx.refresh(); renderAdminBikes(); }
+    catch (e) { alert('Error: ' + e.message); }
+};
+
+async function renderAdminRequests() {
+    content().innerHTML = 'Loading...';
     try {
         const snap = await getDocs(collection(db, "applications"));
-        let html = "";
+        let html = '';
         snap.forEach(d => {
-            const data = d.data();
-            html += `<div class="fb-row" style="flex-direction:column; align-items:flex-start;">
-                <b>${data.name} (${data.brand})</b>
-                <small>${data.address}, ${data.area} - ${data.phone}</small>
-                <div style="display:flex; gap:8px; margin-top:8px;">
-                    <button class="btn-primary" onclick="approveReq('${d.id}')">Approve</button>
-                    <button class="btn-outline" onclick="deleteReq('${d.id}')">Delete</button>
-                </div>
-            </div>`;
+            const x = d.data(), p = String(x.phone || '').replace(/\D/g, '');
+            const w = p ? 'https://wa.me/' + (p.startsWith('880') ? p : '880' + p.replace(/^0/, '')) : '';
+            html += `<div class="fb-row" style="flex-direction:column;align-items:flex-start;">
+                <b>${esc(x.name)} (${esc(x.brand)})</b>
+                <small>${esc(x.address)}, ${esc(x.area)}, ${esc(x.division)} - ${esc(x.phone)}</small>
+                <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                    ${w ? `<a class="btn-outline" style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700" href="${w}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+                    <button class="btn-primary" onclick="approveReq('${esc(d.id)}')">Approve</button>
+                    <button class="btn-outline" onclick="deleteReq('${esc(d.id)}')">Delete</button>
+                </div></div>`;
         });
-        content.innerHTML = html || "No pending requests.";
-    } catch(e) { content.innerHTML = "Error loading requests."; }
+        content().innerHTML = html || 'No pending requests.';
+    } catch (e) { content().innerHTML = 'Error loading requests.'; }
 }
 
-window.approveReq = async function(id) {
+window.approveReq = async function (id) {
     try {
-        const reqDoc = await getDocs(collection(db, "applications"));
-        let data;
-        reqDoc.forEach(d => { if(d.id === id) data = d.data(); });
-        if(!data) return;
-
-        // Add to showrooms
+        const snap = await getDoc(doc(db, "applications", id));
+        if (!snap.exists()) return;
+        const x = snap.data();
+        const ll = (prompt('Google Maps থেকে লোকেশন (lat, lng) পেস্ট করুন, যেমন 23.8103, 90.4125', '') || '').split(',').map(parseFloat);
+        if (ll.length < 2 || !isFinite(ll[0]) || !isFinite(ll[1])) return alert('লোকেশন সঠিক নয়, Approve হয়নি');
         await addDoc(collection(db, "showrooms"), {
-            brand: data.brand, name: data.name, area: data.area, division: data.division,
-            phone: data.phone, address: data.address, lat: 23.8, lng: 90.4, verified: false
+            brand: x.brand, name: x.name, area: x.area, division: x.division, phone: x.phone, address: x.address,
+            lat: ll[0], lng: ll[1], verified: confirm('শোরুমটি কি যাচাই করা হয়েছে? (OK = Verified)')
         });
-
-        // Delete request
         await deleteDoc(doc(db, "applications", id));
-        alert("Approved and added to showrooms!");
-        renderAdminRequests();
-    } catch(e) { alert("Error: " + e.message); }
-}
+        await ctx.refresh(); renderAdminRequests();
+    } catch (e) { alert('Error: ' + e.message); }
+};
 
-window.deleteReq = async function(id) {
-    if(confirm("Reject this request?")) {
-        await deleteDoc(doc(db, "applications", id));
-        renderAdminRequests();
-    }
-}
+window.deleteReq = async function (id) {
+    if (!confirm('এই আবেদন বাতিল করবেন?')) return;
+    try { await deleteDoc(doc(db, "applications", id)); renderAdminRequests(); }
+    catch (e) { alert('Error: ' + e.message); }
+};
