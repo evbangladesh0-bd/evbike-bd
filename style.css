@@ -641,3 +641,44 @@ img {
     color: var(--muted);
     font-size: 13px;
 }
+
+/* ===== যোগ করা অংশ ===== */
+.filter-panel .lbl{display:block;font-size:13px;font-weight:700;color:var(--muted);margin:10px 0 6px}
+.filter-panel .lbl:first-child{margin-top:0}
+.chip.active{background:var(--brand);color:var(--brand-dark)}
+.bike-card .range-badge{position:absolute;left:10px;bottom:10px;background:var(--accent);color:#071b10;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.spec-row{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:8px 0;margin:12px 0;text-align:center;font-size:12px}
+.spec-row b{display:block}.spec-row small{color:var(--muted);font-size:10px}
+.sr-card.near{border-color:var(--brand)}
+.brand-tag.ok{background:var(--brand);color:#071b10}
+.dist{background:var(--surface-2);color:var(--ink);padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600}
+.sr-actions .wa{grid-column:1/-1;background:#123b24;color:#7fe6a8}
+.more-btn{display:block;margin:16px auto 0;padding:11px 26px;border-radius:999px;border:1px solid var(--brand);color:var(--brand);font-weight:700}
+.banner{display:none;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:#123b24;color:#7fe6a8;font-size:13px;font-weight:600;margin-bottom:12px}
+.banner.show{display:flex}.banner button{margin-left:auto;color:var(--danger);font-weight:800}
+.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,120px);background:#123b24;color:#7fe6a8;padding:10px 18px;border-radius:999px;font-weight:700;font-size:13px;border:1px solid var(--brand);z-index:3000;transition:transform .3s}
+.toast.show{transform:translate(-50%,0)}
+.m-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.m-stats div{background:var(--surface-2);border-radius:12px;padding:8px 10px;font-size:14px;font-weight:800}
+.m-stats small{display:block;color:var(--muted);font-size:11px;font-weight:600}
+.spec-table{width:100%;border-collapse:collapse;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:12px 0}
+.spec-table td{padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}
+.spec-table td:first-child{color:var(--muted);font-weight:700;width:42%}
+.modal-content h4{margin:16px 0 8px;font-weight:800}
+.modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.modal-actions a{flex:1;min-width:130px;text-align:center;padding:11px;border-radius:10px;font-weight:700;border:1px solid var(--line)}
+.modal-actions .p{background:var(--brand);color:#071b10;border-color:var(--brand)}
+.empty{padding:40px 16px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--radius)}
+.leaflet-popup-content{font-family:inherit;min-width:200px}
+.leaflet-popup-content a{display:inline-block;margin:6px 6px 0 0;font-weight:700;color:#0c9a4b}
+
+/* ===== বাংলা ফন্ট ও অ্যাডমিন ===== */
+body{font-family:'Hind Siliguri','Inter',system-ui,sans-serif}
+html[lang="en"] body{font-family:'Inter','Hind Siliguri',system-ui,sans-serif}
+.fb-title{color:var(--brand);font-weight:800;margin-bottom:12px}
+.fb-msg{font-size:13px;color:var(--accent);min-height:18px;margin:6px 0;text-align:center}
+.fb-btn{display:block;width:100%;padding:12px;border-radius:8px;font-weight:700;margin-top:10px}
+.fb-lbl{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:4px 0}
+.fb-row{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--surface-2);padding:10px;margin-top:6px;border-radius:8px;font-size:14px}
+.fb-row button{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700}
+.fb-prev{max-height:120px;border-radius:8px;margin-bottom:8px}
