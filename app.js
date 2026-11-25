@@ -1,5 +1,5 @@
-// app.js — সার্চ, ফিল্টার, ম্যাপ, Near Me, ভাষা টগল
-import {loadRemote, initAdmin} from './firebase.js';
+// app.js
+import {loadRemote, initAdmin, submitListing} from './firebase.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -13,7 +13,6 @@ const dir = s => `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${
 const safeImg = u => /^https:\/\//.test(u||'') ? esc(u) : '';
 function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove('show'),2200); }
 
-/* ---------- ভাষা (স্ট্যাটিক লেখা) ---------- */
 const I18N = {
   nav_bikes:['বাইক','Bikes'], nav_map:['ম্যাপ','Map'], nav_show:['শোরুম','Showrooms'], brands:['ব্র্যান্ড','Brands'],
   badge:['🌿 সব ব্র্যান্ড • সব শোরুম • এক জায়গায়','🌿 All Brands • All Showrooms • One Place'],
@@ -34,7 +33,6 @@ function applyLang(){
   renderAll();
 }
 
-/* ---------- ডেটা ---------- */
 const merge = (base, rem) => { const m = new Map(base.map(b => [b.id, b])); rem.forEach(r => m.set(r.id, {...m.get(r.id), ...r})); return [...m.values()].filter(b => !b.deleted); };
 let bikes = BIKES.slice(), showrooms = SHOWROOMS.slice();
 const st = {brand:'all', price:'all', type:'all', div:'all', q:'', limit:24, loc:null};
@@ -43,7 +41,6 @@ const TYPES = [['all','সব ধরন','All types'],['Scooter','স্কু�
 const typeName = t => { const x = TYPES.find(y => y[0]===t); return x ? L(x[1],x[2]) : t; };
 const priceOk = p => st.price==='all' || (st.price==='u1'&&p<100000) || (st.price==='m'&&p>=100000&&p<=150000) || (st.price==='o'&&p>150000);
 
-/* ---------- রেন্ডার ---------- */
 const chip = (act, v, label, on) => `<button class="chip ${on?'active':''}" data-act="${act}" data-v="${esc(v)}">${esc(label)}</button>`;
 function renderChips(){
   const brands = ['all', ...new Set(bikes.map(b=>b.brand))].sort((a,b)=>a==='all'?-1:a.localeCompare(b));
@@ -72,7 +69,7 @@ const srCard = s => `<article class="sr-card ${s._d!=null&&s._d<15?'near':''}">
   ${s.phone?`<div class="sr-line"><i>📞</i><a href="${tel(s.phone)}">${esc(s.phone)}</a></div>`:''}
   <div class="sr-actions"><a class="dir" href="${dir(s)}" target="_blank" rel="noopener">🧭 Direction</a>${s.phone?`<a class="call" href="${tel(s.phone)}">📞 ${L('কল','Call')}</a>`:''}${wa(s.phone)?`<a class="wa" href="${wa(s.phone)}" target="_blank" rel="noopener">💬 WhatsApp</a>`:''}</div></article>`;
 const dist = (a,b,c,d) => { const r=x=>x*Math.PI/180, h=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2; return 12742*Math.asin(Math.sqrt(h)); };
-/* ---------- ম্যাপ পিন (ব্র্যান্ডের রঙ + নাম/লোগো) ---------- */
+
 const brandColor = b => { let h = 0; for(const c of b) h = (h*31 + c.charCodeAt(0)) % 360; return `hsl(${h} 65% 38%)`; };
 const initials = b => b.replace(/[^A-Za-z0-9 ]/g,'').split(' ').filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase() || '?';
 function pinIcon(s){
@@ -98,7 +95,6 @@ function renderAll(){
   $('statBikes').textContent = nf(bikes.length)+'+'; $('statBrands').textContent = nf(new Set(bikes.map(b=>b.brand)).size)+'+'; $('statShowrooms').textContent = nf(showrooms.length)+'+';
 }
 
-/* ---------- বাইকের বিস্তারিত ---------- */
 function openBike(id){
   const b = bikes.find(x=>x.id===id); if(!b) return;
   let l = showrooms.filter(s => s.brand.includes(b.brand) || b.brand.includes(s.brand));
@@ -118,7 +114,6 @@ function openBike(id){
 }
 const closeAll = () => { document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('show')); document.body.style.overflow=''; };
 
-/* ---------- Near Me ---------- */
 function nearMe(){
   if(st.loc){ st.loc=null; $('nearBanner').classList.remove('show'); return renderShowrooms(); }
   if(!navigator.geolocation) return toast(L('এই ব্রাউজারে লোকেশন সাপোর্ট নেই','Location is not supported'));
@@ -130,7 +125,7 @@ function nearMe(){
   }, () => toast(L('লোকেশনের অনুমতি পাওয়া যায়নি','Location permission denied')), {timeout:10000});
 }
 
-/* ---------- ইভেন্ট ---------- */
+// Event Listeners
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if(!t) return;
   const a = t.dataset.act, v = t.dataset.v;
@@ -142,15 +137,38 @@ document.addEventListener('click', e => {
   if(a==='near') return nearMe();
   if(a==='goto') return $(t.dataset.id).scrollIntoView({behavior:'smooth'});
   if(a==='lang'){ lang = lang==='bn'?'en':'bn'; try{ localStorage.setItem('lang',lang); }catch{} applyLang(); }
+  if(a==='open-listing'){ $('listingModal').classList.add('show'); document.body.style.overflow='hidden'; }
 });
 document.addEventListener('keydown', e => { if(e.key==='Escape') closeAll(); });
 $('searchInput').addEventListener('input', e => { st.q=e.target.value.trim(); renderBikes(); });
 $('searchForm').addEventListener('submit', e => { e.preventDefault(); $('bikes').scrollIntoView({behavior:'smooth'}); });
-let clicks=0, timer; /* লোগোতে ৫ বার ক্লিক = অ্যাডমিন */
+
+// 5-click Admin Access
+let clicks=0, timer; 
 $('mainLogo').addEventListener('click', e => { clicks++; clearTimeout(timer); if(clicks>=5){ e.preventDefault(); clicks=0; $('adminModal').classList.add('show'); } else timer=setTimeout(()=>clicks=0,2000); });
 
-/* ---------- শুরু ---------- */
-const L_ = window.L; /* Leaflet (নামের সংঘর্ষ এড়াতে) */
+// Listing Form Submit
+$('listingForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    const msg = $('lsMsg');
+    btn.disabled = true; msg.textContent = 'Submitting...'; msg.style.color = 'var(--muted)';
+    try {
+        await submitListing({
+            name: $('lsName').value, brand: $('lsBrand').value, phone: $('lsPhone').value,
+            address: $('lsAddress').value, area: $('lsArea').value, division: $('lsDivision').value
+        });
+        msg.textContent = 'Successfully submitted! Pending admin approval.'; msg.style.color = 'var(--brand)';
+        e.target.reset();
+        setTimeout(() => closeAll(), 3000);
+    } catch (err) {
+        msg.textContent = 'Error: ' + err.message; msg.style.color = 'var(--danger)';
+        btn.disabled = false;
+    }
+});
+
+// Init
+const L_ = window.L;
 $('year').textContent = new Date().getFullYear();
 map = L_.map('map',{center:[23.8,90.4],zoom:7,minZoom:6,maxBounds:[[19.5,86.5],[28,94.5]],maxBoundsViscosity:.9}); L_.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map); layer = (L_.markerClusterGroup ? L_.markerClusterGroup({maxClusterRadius:50,showCoverageOnHover:false}) : L_.layerGroup()).addTo(map);
 const labels = () => $('map').classList.toggle('show-labels', map.getZoom() >= 9); map.on('zoomend', labels); labels();
