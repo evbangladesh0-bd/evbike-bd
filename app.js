@@ -13,10 +13,11 @@ const dir = s => `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${
 const safeImg = u => /^https:\/\//.test(u||'') ? esc(u) : '';
 function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove('show'),2200); }
 
+// এখানে হোম পেজের টেক্সট আপডেট করা হয়েছে
 const I18N = {
   nav_bikes:['বাইক','Bikes'], nav_map:['ম্যাপ','Map'], nav_show:['শোরুম','Showrooms'], brands:['ব্র্যান্ড','Brands'],
   badge:['🌿 সব ব্র্যান্ড • সব শোরুম • এক জায়গায়','🌿 All Brands • All Showrooms • One Place'],
-  h1:['বাংলাদেশের সব <span class="hl">ইভি বাইক</span><br>শোরুম ও ম্যাপসহ','All <span class="hl">Electric Bikes</span> in Bangladesh<br>with Showrooms & Maps'],
+  h1:['স্মার্ট উপায়ে <span class="hl">ইভি বাইক</span> খুঁজুন<br>সব শোরুম ও ম্যাপ এক জায়গায়','The Smart Way to Explore <span class="hl">EV Bikes</span><br>All Showrooms in One Place'],
   lead:['দাম ও রেঞ্জ দেখুন — শোরুমের ঠিকানা, ফোন, WhatsApp ও ডিরেকশন পান এক জায়গায়।','Check prices and range — get showroom addresses, phones, WhatsApp and directions in one place.'],
   ph:['ব্র্যান্ড বা মডেল — যেমন Yadea, TAILG…','Brand or model — e.g. Yadea, TAILG…'],
   eb_bikes:['সব মডেল • সব দাম','All Models • All Prices'], t_bikes:['আপনার বাজেটে সেরা ইভি বাইক','The Best EV Bike for Your Budget'],
