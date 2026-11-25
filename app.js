@@ -93,7 +93,7 @@ function renderShowrooms(){
   l.forEach(s => { if(isFinite(s.lat)&&isFinite(s.lng)) L_.marker([s.lat,s.lng],{icon:pinIcon(s)}).bindPopup(`<b>${esc(s.name)}</b><br>${esc(s.address)}<br><a href="${dir(s)}" target="_blank" rel="noopener">Direction</a>${s.phone?`<a href="${tel(s.phone)}">Call</a>`:''}${wa(s.phone)?`<a href="${wa(s.phone)}" target="_blank" rel="noopener">WhatsApp</a>`:''}`).addTo(layer); });
 }
 function renderAll(){
-  $('mapLegend').innerHTML = [...new Set(showrooms.map(s=>s.brand))].sort().map(b=>`<span><i style="background:${brandColor(b)}"></i>${esc(b)}</span>`).join('');
+  const lg = $('mapLegend'); if(lg) lg.innerHTML = [...new Set(showrooms.map(s=>s.brand))].sort().map(b=>`<span><i style="background:${brandColor(b)}"></i>${esc(b)}</span>`).join('');
   renderChips(); renderBikes(); renderShowrooms();
   $('statBikes').textContent = nf(bikes.length)+'+'; $('statBrands').textContent = nf(new Set(bikes.map(b=>b.brand)).size)+'+'; $('statShowrooms').textContent = nf(showrooms.length)+'+';
 }
