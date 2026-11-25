@@ -682,3 +682,48 @@ html[lang="en"] body{font-family:'Inter','Hind Siliguri',system-ui,sans-serif}
 .fb-row{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--surface-2);padding:10px;margin-top:6px;border-radius:8px;font-size:14px}
 .fb-row button{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700}
 .fb-prev{max-height:120px;border-radius:8px;margin-bottom:8px}
+
+/* ===== হালকা সবুজ + সাদা থিম ===== */
+:root{--bg:#f3faf6;--surface:#fff;--surface-2:#eaf6ef;--ink:#12281c;--muted:#5a7366;--line:#d6e9dd;--brand:#19c45e;--brand-dark:#06280f;--bt:#0b8a3e}
+body{background:var(--bg);color:var(--ink)}
+.header{background:rgba(255,255,255,.96);border-bottom:1px solid var(--line)}
+.logo img{height:46px;width:auto;border-radius:0}
+.header-nav a{color:var(--muted)}.header-nav a:hover{color:var(--bt)}
+.icon-btn,.lang-btn{background:var(--surface-2);color:var(--bt);border:1px solid var(--line)}
+.hero{background:radial-gradient(circle at 15% 20%,rgba(25,196,94,.16) 0 5px,transparent 6px),linear-gradient(120deg,#ecfbf2 0%,#d5f4e3 55%,#bfecd2 100%)}
+.hero h1{color:var(--ink)}.hero h1 .hl{color:var(--bt)}.hero p.lead{color:var(--muted)}
+.hero-badge{background:#fff;border:1px solid var(--line);color:var(--bt)}
+.search-wrap{box-shadow:0 8px 24px rgba(20,120,60,.15);border:1px solid var(--line)}
+.quick-btn{background:#fff;color:var(--ink)}.quick-btn:hover{background:var(--surface-2)}
+.quick-btn .qi{background:#e3f6ea;color:var(--bt)}
+.quick-btn.primary{background:linear-gradient(135deg,#3fe07f,#19c45e);color:var(--brand-dark)}
+.quick-btn.primary .qi{background:rgba(255,255,255,.5);color:var(--brand-dark)}
+.stat-box{background:#fff;border:1px solid var(--line)}.stat-box strong{color:var(--bt)}.stat-box span{color:var(--muted)}
+.eyebrow,.bike-card .brandline,.sr-card .sr-area{color:var(--bt)}
+.bike-card,.sr-card,.filter-panel,.modal-content{background:#fff;box-shadow:0 2px 10px rgba(20,100,50,.07)}
+.bike-card:hover{box-shadow:0 14px 28px rgba(20,100,50,.16)}
+.bike-card .thumb{background:linear-gradient(135deg,#e2f7ea,#b8ebcc)}
+.chip{background:#fff;color:var(--ink)}.chip:hover{border-color:var(--brand)}.chip.active{background:var(--brand);color:var(--brand-dark);border-color:var(--brand)}
+.sr-card .brand-tag,.banner,.toast,.sr-actions .wa{background:#e3f6ea;color:var(--bt)}
+.brand-tag.ok{background:var(--brand);color:var(--brand-dark)}
+.sr-card .sr-actions .call{background:#fff;color:var(--ink)}
+.sr-card .sr-line a{color:var(--ink)}
+.btn-outline{color:var(--ink)}
+.modal-overlay{background:rgba(15,40,28,.55)}
+.modal-close{background:#e3f6ea;color:var(--ink)}.modal-close:hover{background:#cfeedb}
+.m-stats div,.fb-row{background:var(--surface-2)}
+.admin-input{background:#fff;color:var(--ink)}
+.footer{background:#e3f6ea;border-top:1px solid var(--line)}.footer p,.footer a{color:var(--muted)}
+.map-box{border-color:var(--line)}
+
+/* ===== ম্যাপ পিন: ব্র্যান্ডের নাম/লোগো ===== */
+.ev-pin{background:none;border:none}
+.ev-pin .dot{width:30px;height:30px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;color:#fff;font:700 11px Inter,sans-serif;overflow:hidden}
+.ev-pin .dot img{width:100%;height:100%;object-fit:contain;background:#fff}
+.ev-pin .lbl{display:none;position:absolute;top:32px;left:50%;transform:translateX(-50%);background:#fff;color:var(--ink);font:700 11px Inter,sans-serif;padding:1px 7px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.3);white-space:nowrap}
+.show-labels .ev-pin .lbl{display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+
+.ev-pin .dot.lg{width:40px;height:40px;border-radius:10px}
+.ev-pin .dot.lg+.lbl{top:42px}
