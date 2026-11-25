@@ -16,9 +16,9 @@ function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
 // এখানে হোম পেজের টেক্সট আপডেট করা হয়েছে
 const I18N = {
   nav_bikes:['বাইক','Bikes'], nav_map:['ম্যাপ','Map'], nav_show:['শোরুম','Showrooms'], brands:['ব্র্যান্ড','Brands'],
-  badge:['🌿 সব ব্র্যান্ড • সব শোরুম • এক জায়গায়','🌿 All Brands • All Showrooms • One Place'],
-  h1:['স্মার্ট উপায়ে <span class="hl">ইভি বাইক</span> খুঁজুন<br>সব শোরুম ও ম্যাপ এক জায়গায়','The Smart Way to Explore <span class="hl">EV Bikes</span><br>All Showrooms in One Place'],
-  lead:['দাম ও রেঞ্জ দেখুন — শোরুমের ঠিকানা, ফোন, WhatsApp ও ডিরেকশন পান এক জায়গায়।','Check prices and range — get showroom addresses, phones, WhatsApp and directions in one place.'],
+  badge:['🌿 যাচাইকৃত শোরুম • সব ব্র্যান্ড • এক জায়গায়','🌿 Verified Showrooms • All Brands • One Place'],
+  h1:['বাংলাদেশের সব <span class="hl">ইভি বাইক</span>,<br>দাম ও যাচাইকৃত শোরুম এক জায়গায়','All <span class="hl">EV Bikes</span> in Bangladesh,<br>Prices &amp; Verified Showrooms in One Place'],
+  lead:['ইলেকট্রিক বাইক ও স্কুটারের দাম, রেঞ্জ আর স্পিড তুলনা করুন। পেট্রলের খরচ বাঁচান, কাছের যাচাইকৃত শোরুমে টেস্ট রাইড নিন, কল বা WhatsApp-এ সরাসরি কথা বলুন।','Compare EV bike and scooter prices, range and speed. Save on petrol, take a test ride at a verified showroom near you, and call or WhatsApp them directly.'],
   ph:['ব্র্যান্ড বা মডেল — যেমন Yadea, TAILG…','Brand or model — e.g. Yadea, TAILG…'],
   eb_bikes:['সব মডেল • সব দাম','All Models • All Prices'], t_bikes:['আপনার বাজেটে সেরা ইভি বাইক','The Best EV Bike for Your Budget'],
   lbl_brand:['ব্র্যান্ড','Brand'], lbl_price:['দাম','Price'], lbl_type:['ধরন','Type'], eb_map:['লাইভ ম্যাপ','Live Map'],
@@ -108,7 +108,7 @@ function openBike(id){
     <h2 style="font-size:26px;font-weight:800">${esc(b.name)}</h2><div style="font-size:26px;font-weight:800;margin-top:6px">${tk(b.price)}</div>
     <div class="m-stats"><div><small>${L('রেঞ্জ','Range')}</small>${nf(b.range)} ${L('কিমি','km')}</div><div><small>${L('টপ স্পিড','Top speed')}</small>${nf(b.speed)}</div><div><small>${L('মোটর','Motor')}</small>${nf(b.motor)}W</div><div><small>${L('ধরন','Type')}</small>${esc(typeName(b.type))}</div></div>
     <p style="color:var(--muted);white-space:pre-line">${esc(desc)}</p>
-    <div class="modal-actions"><a class="p" href="https://wa.me/8801715331303?text=${msg}" target="_blank" rel="noopener">💬 WhatsApp</a><a href="tel:+8801715331303">📞 ${L('কল করুন','Call')}</a></div>
+    <div class="modal-actions"><a class="p" href="https://evcharger.bd" target="_blank" rel="noopener">🔌 ${L('এই বাইকের চার্জার দেখুন','Find a charger')}</a><a href="https://evcharge.bd" target="_blank" rel="noopener">⚡ ${L('পথে চার্জিং স্টেশন','Charging stations')}</a></div>
     <h4>${esc(b.brand)} ${L('-এর শোরুম',' showrooms')} (${nf(l.length)})</h4>
     <div class="showroom-grid">${l.slice(0,6).map(srCard).join('') || `<div class="empty">${L('এই ব্র্যান্ডের শোরুম এখনো তালিকায় নেই','No showrooms listed for this brand yet')}</div>`}</div>`;
   $('bikeModal').classList.add('show'); document.body.style.overflow='hidden';
@@ -173,6 +173,6 @@ const L_ = window.L;
 $('year').textContent = new Date().getFullYear();
 map = L_.map('map',{center:[23.8,90.4],zoom:7,minZoom:6,maxBounds:[[19.5,86.5],[28,94.5]],maxBoundsViscosity:.9}); L_.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map); layer = (L_.markerClusterGroup ? L_.markerClusterGroup({maxClusterRadius:50,showCoverageOnHover:false}) : L_.layerGroup()).addTo(map);
 const labels = () => $('map').classList.toggle('show-labels', map.getZoom() >= 9); map.on('zoomend', labels); labels();
-const refresh = async () => { const r = await loadRemote(); bikes = merge(BIKES, r.bikes); if(r.showrooms.length) showrooms = r.showrooms; renderAll(); };
+const refresh = async () => { const r = await loadRemote(); bikes = merge(BIKES, r.bikes); if(r.showrooms.length){ const k = s => s.brand+'|'+s.name; showrooms = [...new Map([...SHOWROOMS, ...r.showrooms].map(s => [k(s), s])).values()]; } renderAll(); };
 initAdmin({getBikes: () => bikes, refresh});
 applyLang(); refresh();
