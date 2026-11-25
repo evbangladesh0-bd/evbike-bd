@@ -1,298 +1,147 @@
-// app.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+// app.js — সার্চ, ফিল্টার, ম্যাপ, Near Me, ভাষা টগল
+import {loadRemote, initAdmin} from './firebase.js';
 
-// ১. ফায়ারবেস কনফিগারেশন
-const firebaseConfig = {
-    apiKey: "AIzaSyB1KRjfU1QYuVN6GCNAUybmNPpE8Qd_23E",
-    authDomain: "ev-bike-53505.firebaseapp.com",
-    projectId: "ev-bike-53505",
-    storageBucket: "ev-bike-53505.firebasestorage.app",
-    messagingSenderId: "654742888648",
-    appId: "1:654742888648:web:e7401469c0b5385c43c5fd"
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let lang = 'bn'; try { lang = localStorage.getItem('lang') === 'en' ? 'en' : 'bn'; } catch {}
+const L = (b, e) => lang === 'bn' ? b : e;
+const nf = n => (+n || 0).toLocaleString(lang === 'bn' ? 'bn-BD' : 'en-US', {maximumFractionDigits:0});
+const tk = n => '৳' + nf(n);
+const num = p => { const d = String(p||'').replace(/\D/g,''); return d ? (d.startsWith('880') ? d : '880' + d.replace(/^0/,'')) : ''; };
+const tel = p => 'tel:+' + num(p), wa = p => num(p) ? 'https://wa.me/' + num(p) : '';
+const dir = s => `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`;
+const safeImg = u => /^https:\/\//.test(u||'') ? esc(u) : '';
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove('show'),2200); }
+
+/* ---------- ভাষা (স্ট্যাটিক লেখা) ---------- */
+const I18N = {
+  nav_bikes:['বাইক','Bikes'], nav_map:['ম্যাপ','Map'], nav_show:['শোরুম','Showrooms'], brands:['ব্র্যান্ড','Brands'],
+  badge:['🌿 সব ব্র্যান্ড • সব শোরুম • এক জায়গায়','🌿 All Brands • All Showrooms • One Place'],
+  h1:['বাংলাদেশের সব <span class="hl">ইভি বাইক</span><br>শোরুম ও ম্যাপসহ','All <span class="hl">Electric Bikes</span> in Bangladesh<br>with Showrooms & Maps'],
+  lead:['দাম ও রেঞ্জ দেখুন — শোরুমের ঠিকানা, ফোন, WhatsApp ও ডিরেকশন পান এক জায়গায়।','Check prices and range — get showroom addresses, phones, WhatsApp and directions in one place.'],
+  ph:['ব্র্যান্ড বা মডেল — যেমন Yadea, TAILG…','Brand or model — e.g. Yadea, TAILG…'],
+  eb_bikes:['সব মডেল • সব দাম','All Models • All Prices'], t_bikes:['আপনার বাজেটে সেরা ইভি বাইক','The Best EV Bike for Your Budget'],
+  lbl_brand:['ব্র্যান্ড','Brand'], lbl_price:['দাম','Price'], lbl_type:['ধরন','Type'], eb_map:['লাইভ ম্যাপ','Live Map'],
+  banner:['🎯 আপনার অবস্থান থেকে কাছের শোরুম আগে দেখানো হচ্ছে','🎯 Showing showrooms nearest to you first'],
+  eb_show:['ঠিকানা • ফোন • WhatsApp • Direction','Address • Phone • WhatsApp • Direction'],
+  t_show:['কাছের শোরুমে টেস্ট রাইড নিন','Take a Test Ride at a Showroom Near You'], more:['আরো দেখুন','Show more']
 };
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-// ২. ডিফল্ট ডেটা (ফায়ারবেসে ডেটা না থাকলে এগুলো দেখাবে)
-let bikes = [
-    { id: '1', brand: 'Yadea', name: 'Mia', price: 86500, range: 60, speed: 50, type: 'Scooter', image: '', desc: '' },
-    { id: '2', brand: 'TAILG', name: 'Orca F50', price: 84990, range: 85, speed: 50, type: 'Scooter', image: '', desc: '' },
-    { id: '3', brand: 'Walton Takyon', name: 'Leo 12Ah', price: 49850, range: 40, speed: 45, type: 'Scooter', image: '', desc: '' }
-];
-
-let showrooms = [
-    { brand: 'TAILG', name: 'TAILG HQ / Edison Tejgaon', area: 'Tejgaon', division: 'Dhaka', phone: '01325-054904', address: '246, Rangs Babylonia, Tejgaon, Dhaka 1208', lat: 23.7626, lng: 90.3989, verified: true },
-    { brand: 'Akij Motors', name: 'Akij Center - Tejgaon HQ', area: 'Tejgaon', division: 'Dhaka', phone: '01755-662545', address: 'AKIJ Center, 97 Shaheed Tajuddin Ahmed Sharoni, Tejgaon', lat: 23.7626, lng: 90.3989, verified: true },
-    { brand: 'REVOO', name: 'Junainah EV', area: 'Madhabpur', division: 'Sylhet', phone: '01674-909665', address: '16/10 Vagdi (Dhaka Sylhet highway)', lat: 24.1000, lng: 91.5000, verified: true },
-    { brand: 'Yadea', name: 'Yadea Mirpur - Bike Heaven', area: 'Mirpur', division: 'Dhaka', phone: '01711-410878', address: '357/4 South Pirerbag, Mirpur, Dhaka', lat: 23.7907, lng: 90.3659, verified: false }
-];
-
-// ৩. গ্লোবাল ভেরিয়েবল
-let map, currentLang = 'en', currentEditingBikeId = null;
-const bn = n => (Number(n) || 0).toLocaleString('bn-BD', { maximumFractionDigits: 0 });
-const priceText = n => currentLang === 'en' ? '৳' + n : '৳' + bn(n);
-
-// ৪. ভাষা পরিবর্তন (EN / BN)
-window.toggleLanguage = function() {
-    currentLang = currentLang === 'en' ? 'bn' : 'en';
-    document.getElementById('langText').textContent = currentLang === 'en' ? 'বাংলা' : 'English';
-    
-    // সব ডেটা-en এবং ডেটা-bn অ্যাট্রিবিউট আপডেট করা
-    document.querySelectorAll('[data-en]').forEach(el => {
-        el.innerHTML = el.getAttribute(`data-${currentLang}`);
-    });
-    
-    // ডাইনামিক ডেটা রি-রেন্ডার
-    renderBikes();
-    renderShowrooms();
-};
-
-window.goTo = function(id) {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-};
-
-// ৫. বাইক রেন্ডার
-window.renderBikes = function() {
-    const grid = document.getElementById('bikeGrid');
-    if(!grid) return;
-    
-    document.getElementById('resultCount').textContent = currentLang === 'en' ? `${bikes.length} Models` : `${bn(bikes.length)}টি মডেল`;
-    
-    grid.innerHTML = bikes.map(b => `
-        <article class="bike-card">
-            <div class="thumb" onclick="openBikeModal('${b.id}')">
-                ${b.image ? `<img src="${b.image}" alt="${b.name}">` : '🏍️'}
-            </div>
-            <div class="body">
-                <div class="brandline">${b.brand}</div>
-                <h3>${b.name}</h3>
-                <div class="price"><small>${currentLang === 'en' ? 'Est. Price' : 'আনুমানিক দাম'}</small>${priceText(b.price)}</div>
-                <div class="btns">
-                    <button class="btn-primary" onclick="openBikeModal('${b.id}')">${currentLang === 'en' ? 'View Details' : 'বিস্তারিত'}</button>
-                </div>
-            </div>
-        </article>
-    `).join('');
-    
-    document.getElementById('statBikes').textContent = bikes.length + '+';
-};
-
-// ৬. বাইকের বিস্তারিত মডাল (ছবিতে ক্লিক করলে)
-window.openBikeModal = function(id) {
-    const bike = bikes.find(b => b.id === id);
-    if(!bike) return;
-    
-    // অটোমেটিক ডেসক্রিপশন জেনারেটর
-    const autoDescEn = `${bike.brand} ${bike.name} — ${bike.range} km range and ${bike.speed} km/h top speed. Electric commuting is much cheaper than petrol. Test ride at your nearest showroom to check comfort and suspension.`;
-    const autoDescBn = `${bike.brand} ${bike.name} — ${bn(bike.range)} কিমি রেঞ্জ আর ${bn(bike.speed)} কিমি/ঘণ্টা টপ স্পিড। প্রতিদিনের যাতায়াতে চার্জ খরচ পেট্রোলের চেয়ে অনেক কম। শোরুমে টেস্ট রাইড নিয়ে ব্রেক, সাসপেনশন ও সিটের আরাম যাচাই করে নিন।`;
-    
-    // ইউজার যদি অ্যাডমিন প্যানেল থেকে ডেসক্রিপশন লেখে, তবে সেটা দেখাবে। নাহলে অটো ডেসক্রিপশন দেখাবে।
-    const finalDesc = bike.desc ? bike.desc : (currentLang === 'en' ? autoDescEn : autoDescBn);
-
-    const modalBody = document.getElementById('bikeModalBody');
-    modalBody.innerHTML = `
-        <div style="height: 250px; background: #0b3c21; border-radius: 12px; margin-bottom: 20px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-            ${bike.image ? `<img src="${bike.image}" style="width:100%; height:100%; object-fit:contain;">` : '<span style="font-size:80px;">🏍️</span>'}
-        </div>
-        <span style="color: var(--brand); font-weight:800; font-size:14px;">${bike.brand}</span>
-        <h2 style="font-size: 28px; font-weight: 800; margin-bottom: 10px;">${bike.name}</h2>
-        <div style="font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 20px;">${priceText(bike.price)}</div>
-        
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:20px;">
-            <div style="background:var(--surface-2); padding:10px; border-radius:8px; text-align:center;">
-                <small style="color:var(--muted); display:block;">Range</small>
-                <b>${bike.range} km</b>
-            </div>
-            <div style="background:var(--surface-2); padding:10px; border-radius:8px; text-align:center;">
-                <small style="color:var(--muted); display:block;">Top Speed</small>
-                <b>${bike.speed} km/h</b>
-            </div>
-            <div style="background:var(--surface-2); padding:10px; border-radius:8px; text-align:center;">
-                <small style="color:var(--muted); display:block;">Type</small>
-                <b>${bike.type}</b>
-            </div>
-        </div>
-        
-        <h4 style="font-weight:800; margin-bottom:8px;">Description</h4>
-        <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">${finalDesc}</p>
-        
-        <button class="btn-primary" style="width:100%; padding:12px; border-radius:8px;" onclick="closeBikeModal(); goTo('showrooms');">Find Showrooms</button>
-    `;
-    document.getElementById('bikeModal').classList.add('show');
-};
-
-window.closeBikeModal = function() {
-    document.getElementById('bikeModal').classList.remove('show');
-};
-
-// ৭. শোরুম রেন্ডার
-window.renderShowrooms = function() {
-    const grid = document.getElementById('showroomGrid');
-    if(!grid) return;
-    
-    document.getElementById('showroomCount').textContent = currentLang === 'en' ? `${showrooms.length} Showrooms` : `${bn(showrooms.length)}টি শোরুম`;
-    
-    // Verified আগে দেখাবে
-    let sorted = [...showrooms].sort((a, b) => (b.verified === true) - (a.verified === true));
-    
-    grid.innerHTML = sorted.map(s => `
-        <article class="sr-card" style="${s.verified ? 'border-color: #19c45e;' : ''}">
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <span class="brand-tag">${s.brand} • ${s.division}</span>
-                ${s.verified ? '<span class="brand-tag" style="background:#19c45e;color:#071b10;">✓ Verified</span>' : '<span class="brand-tag" style="background:#ffc72c;color:#071b10;">Pending</span>'}
-            </div>
-            <h3>${s.name}</h3>
-            <div class="sr-area">${s.area}</div>
-            <div class="sr-line"><i>📍</i><span>${s.address}</span></div>
-            <div class="sr-line"><i>📞</i><a href="tel:${s.phone}">${s.phone}</a></div>
-            <div class="sr-actions">
-                <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(s.address)}" target="_blank" class="dir">🧭 Direction</a>
-                <a href="tel:${s.phone}" class="call">📞 Call</a>
-            </div>
-        </article>
-    `).join('');
-    
-    document.getElementById('statShowrooms').textContent = showrooms.length + '+';
-};
-
-// ৮. ম্যাপ ইনিশিয়ালাইজ
-function initMap() {
-    map = L.map('map').setView([23.8103, 90.4125], 7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    const icon = L.divIcon({ className: '', html: '<div class="custom-marker"><i>⚡</i></div>', iconSize: [30, 30], iconAnchor: [15, 30] });
-    
-    showrooms.forEach(s => {
-        if(s.lat && s.lng) {
-            L.marker([s.lat, s.lng], { icon }).addTo(map).bindPopup(`<b>${s.name}</b><br>${s.address}`);
-        }
-    });
+function applyLang(){
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i]').forEach(el => { const v = I18N[el.dataset.i][lang==='bn'?0:1]; el.hasAttribute('data-html') || /<|&/.test(v) ? el.innerHTML = v : el.textContent = v; });
+  document.querySelectorAll('[data-ip]').forEach(el => el.placeholder = I18N[el.dataset.ip][lang==='bn'?0:1]);
+  $('langBtn').textContent = L('English','বাংলা');
+  renderAll();
 }
 
-// ৯. ফায়ারবেস থেকে ডেটা লোড
-async function loadData() {
-    try {
-        const querySnapshot = await getDocs(collection(db, "bikes"));
-        if(!querySnapshot.empty) {
-            bikes = [];
-            querySnapshot.forEach((doc) => { bikes.push({ id: doc.id, ...doc.data() }); });
-        }
-    } catch(e) { console.log("Using local bikes data"); }
-    
-    renderBikes();
-    renderShowrooms();
-    initMap();
-    document.getElementById('statBrands').textContent = new Set(bikes.map(b=>b.brand)).size + '+';
+/* ---------- ডেটা ---------- */
+const merge = (base, rem) => { const m = new Map(base.map(b => [b.id, b])); rem.forEach(r => m.set(r.id, {...m.get(r.id), ...r})); return [...m.values()].filter(b => !b.deleted); };
+let bikes = BIKES.slice(), showrooms = SHOWROOMS.slice();
+const st = {brand:'all', price:'all', type:'all', div:'all', q:'', limit:24, loc:null};
+const PRICES = [['all','সব দাম','Any price'],['u1','১ লাখের নিচে','Under 1 lakh'],['m','১–১.৫ লাখ','1–1.5 lakh'],['o','১.৫ লাখ+','1.5 lakh+']];
+const TYPES = [['all','সব ধরন','All types'],['Scooter','স্কুটার','Scooter'],['Sport','স্পোর্ট','Sport'],['Motorcycle','মোটরসাইকেল','Motorcycle']];
+const typeName = t => { const x = TYPES.find(y => y[0]===t); return x ? L(x[1],x[2]) : t; };
+const priceOk = p => st.price==='all' || (st.price==='u1'&&p<100000) || (st.price==='m'&&p>=100000&&p<=150000) || (st.price==='o'&&p>150000);
+
+/* ---------- রেন্ডার ---------- */
+const chip = (act, v, label, on) => `<button class="chip ${on?'active':''}" data-act="${act}" data-v="${esc(v)}">${esc(label)}</button>`;
+function renderChips(){
+  const brands = ['all', ...new Set(bikes.map(b=>b.brand))].sort((a,b)=>a==='all'?-1:a.localeCompare(b));
+  $('brandChips').innerHTML = brands.map(b=>chip('brand',b,b==='all'?L('সব ব্র্যান্ড','All brands'):b,st.brand===b)).join('');
+  $('priceChips').innerHTML = PRICES.map(([v,b,e])=>chip('price',v,L(b,e),st.price===v)).join('');
+  $('typeChips').innerHTML = TYPES.filter(([v])=>v==='all'||bikes.some(b=>b.type===v)).map(([v,b,e])=>chip('type',v,L(b,e),st.type===v)).join('');
+  const divs = ['all', ...new Set(showrooms.map(s=>s.division).filter(Boolean))].sort((a,b)=>a==='all'?-1:a.localeCompare(b));
+  $('divChips').innerHTML = divs.map(d=>chip('div',d,d==='all'?L('সব বিভাগ','All divisions'):d,st.div===d)).join('');
+}
+function renderBikes(){
+  const q = st.q.toLowerCase();
+  const list = bikes.filter(b => (st.brand==='all'||b.brand===st.brand) && (st.type==='all'||b.type===st.type) && priceOk(b.price) && (!q || `${b.brand} ${b.name}`.toLowerCase().includes(q))).sort((a,b)=>a.price-b.price);
+  $('resultCount').textContent = nf(list.length) + L('টি মডেল',' models');
+  $('bikeGrid').innerHTML = list.length ? list.map(b => `<article class="bike-card">
+    <div class="thumb" data-act="open" data-v="${esc(b.id)}">${safeImg(b.image)?`<img src="${safeImg(b.image)}" alt="${esc(b.name)}" loading="lazy">`:'🏍️'}<span class="range-badge">${nf(b.range)} ${L('কিমি','km')}</span></div>
+    <div class="body"><div class="brandline">${esc(b.brand)}</div><h3>${esc(b.name)}</h3>
+      <div class="price"><small>${L('আনুমানিক দাম','Est. price')}</small>${tk(b.price)}</div>
+      <div class="spec-row"><div><b>${nf(b.range)} ${L('কিমি','km')}</b><small>${L('রেঞ্জ','Range')}</small></div><div><b>${nf(b.speed)}</b><small>${L('টপ স্পিড','Top speed')}</small></div><div><b>${nf(b.motor)}W</b><small>${L('মোটর','Motor')}</small></div></div>
+      <div class="btns"><button class="btn-primary" data-act="open" data-v="${esc(b.id)}">${L('বিস্তারিত','Details')}</button></div></div></article>`).join('')
+    : `<div class="empty" style="grid-column:1/-1">${L('কোনো মডেল মেলেনি। ফিল্টার বদলে দেখুন।','No models found. Try changing filters.')}</div>`;
+}
+const srCard = s => `<article class="sr-card ${s._d!=null&&s._d<15?'near':''}">
+  <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="brand-tag">${esc(s.brand)} • ${esc(s.division)}</span>${s.verified?`<span class="brand-tag ok">✓ ${L('যাচাইকৃত','Verified')}</span>`:''}</div>
+  <h3>${esc(s.name)}</h3><div class="sr-area">${esc(s.area)} ${s._d!=null?`<span class="dist">≈ ${s._d.toFixed(1)} ${L('কিমি','km')}</span>`:''}</div>
+  <div class="sr-line"><i>📍</i><span>${esc(s.address)}</span></div>
+  ${s.phone?`<div class="sr-line"><i>📞</i><a href="${tel(s.phone)}">${esc(s.phone)}</a></div>`:''}
+  <div class="sr-actions"><a class="dir" href="${dir(s)}" target="_blank" rel="noopener">🧭 Direction</a>${s.phone?`<a class="call" href="${tel(s.phone)}">📞 ${L('কল','Call')}</a>`:''}${wa(s.phone)?`<a class="wa" href="${wa(s.phone)}" target="_blank" rel="noopener">💬 WhatsApp</a>`:''}</div></article>`;
+const dist = (a,b,c,d) => { const r=x=>x*Math.PI/180, h=Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2; return 12742*Math.asin(Math.sqrt(h)); };
+let map, layer;
+function renderShowrooms(){
+  let l = showrooms.filter(s => st.div==='all' || s.division===st.div);
+  if(st.loc) l = l.map(s=>({...s,_d:dist(st.loc.lat,st.loc.lng,s.lat,s.lng)})).sort((a,b)=>a._d-b._d);
+  $('showroomCount').textContent = nf(l.length) + L('টি শোরুম',' showrooms');
+  $('showroomGrid').innerHTML = l.slice(0, st.limit).map(srCard).join('') || `<div class="empty">${L('কোনো শোরুম নেই','No showrooms')}</div>`;
+  $('moreBtn').style.display = l.length > st.limit ? 'block' : 'none';
+  layer.clearLayers();
+  l.forEach(s => { if(isFinite(s.lat)&&isFinite(s.lng)) L_.circleMarker([s.lat,s.lng],{radius:6,color:'#fff',weight:1.5,fillColor:'#19c45e',fillOpacity:.95}).bindPopup(`<b>${esc(s.name)}</b><br>${esc(s.address)}<br><a href="${dir(s)}" target="_blank" rel="noopener">Direction</a>${s.phone?`<a href="${tel(s.phone)}">Call</a>`:''}${wa(s.phone)?`<a href="${wa(s.phone)}" target="_blank" rel="noopener">WhatsApp</a>`:''}`).addTo(layer); });
+}
+function renderAll(){
+  renderChips(); renderBikes(); renderShowrooms();
+  $('statBikes').textContent = nf(bikes.length)+'+'; $('statBrands').textContent = nf(new Set(bikes.map(b=>b.brand)).size)+'+'; $('statShowrooms').textContent = nf(showrooms.length)+'+';
 }
 
-// ১০. অ্যাডমিন লজিক (৫ বার ক্লিক)
-let clickCount = 0, clickTimer;
-document.getElementById('mainLogo').addEventListener('click', (e) => {
-    clickCount++;
-    if (clickCount === 5) {
-        e.preventDefault();
-        clearTimeout(clickTimer);
-        clickCount = 0;
-        document.getElementById('adminModal').classList.add('show');
-    } else {
-        clearTimeout(clickTimer);
-        clickTimer = setTimeout(() => { clickCount = 0; }, 2000);
-    }
+/* ---------- বাইকের বিস্তারিত ---------- */
+function openBike(id){
+  const b = bikes.find(x=>x.id===id); if(!b) return;
+  let l = showrooms.filter(s => s.brand.includes(b.brand) || b.brand.includes(s.brand));
+  if(st.loc) l = l.map(s=>({...s,_d:dist(st.loc.lat,st.loc.lng,s.lat,s.lng)})).sort((a,c)=>a._d-c._d);
+  const desc = b.desc || L(`${b.brand} ${b.name} — ${nf(b.range)} কিমি রেঞ্জ ও ${nf(b.speed)} কিমি/ঘণ্টা টপ স্পিড। শোরুমে টেস্ট রাইড নিয়ে দাম, স্টক ও ওয়ারেন্টি লিখিতভাবে নিশ্চিত করুন।`, `${b.brand} ${b.name} — ${nf(b.range)} km range and ${nf(b.speed)} km/h top speed. Take a test ride and confirm price, stock and warranty in writing.`);
+  const msg = encodeURIComponent(`Hi, I want to know about ${b.brand} ${b.name}`);
+  $('bikeModalBody').innerHTML = `<button class="modal-close" data-act="close">✕</button>
+    ${safeImg(b.image)?`<img src="${safeImg(b.image)}" alt="${esc(b.name)}" style="border-radius:12px;margin-bottom:14px">`:''}
+    <span style="color:var(--brand);font-weight:800">${esc(b.brand)} • ${esc(typeName(b.type))}</span>
+    <h2 style="font-size:26px;font-weight:800">${esc(b.name)}</h2><div style="font-size:26px;font-weight:800;margin-top:6px">${tk(b.price)}</div>
+    <div class="m-stats"><div><small>${L('রেঞ্জ','Range')}</small>${nf(b.range)} ${L('কিমি','km')}</div><div><small>${L('টপ স্পিড','Top speed')}</small>${nf(b.speed)}</div><div><small>${L('মোটর','Motor')}</small>${nf(b.motor)}W</div><div><small>${L('ধরন','Type')}</small>${esc(typeName(b.type))}</div></div>
+    <p style="color:var(--muted);white-space:pre-line">${esc(desc)}</p>
+    <div class="modal-actions"><a class="p" href="https://wa.me/8801715331303?text=${msg}" target="_blank" rel="noopener">💬 WhatsApp</a><a href="tel:+8801715331303">📞 ${L('কল করুন','Call')}</a></div>
+    <h4>${esc(b.brand)} ${L('-এর শোরুম',' showrooms')} (${nf(l.length)})</h4>
+    <div class="showroom-grid">${l.slice(0,6).map(srCard).join('') || `<div class="empty">${L('এই ব্র্যান্ডের শোরুম এখনো তালিকায় নেই','No showrooms listed for this brand yet')}</div>`}</div>`;
+  $('bikeModal').classList.add('show'); document.body.style.overflow='hidden';
+}
+const closeAll = () => { document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('show')); document.body.style.overflow=''; };
+
+/* ---------- Near Me ---------- */
+function nearMe(){
+  if(st.loc){ st.loc=null; $('nearBanner').classList.remove('show'); return renderShowrooms(); }
+  if(!navigator.geolocation) return toast(L('এই ব্রাউজারে লোকেশন সাপোর্ট নেই','Location is not supported'));
+  toast(L('অবস্থান খোঁজা হচ্ছে…','Finding your location…'));
+  navigator.geolocation.getCurrentPosition(p => {
+    st.loc = {lat:p.coords.latitude, lng:p.coords.longitude}; st.limit = 24;
+    $('nearBanner').classList.add('show'); map.setView([st.loc.lat,st.loc.lng], 11); renderShowrooms();
+    $('showrooms').scrollIntoView({behavior:'smooth'});
+  }, () => toast(L('লোকেশনের অনুমতি পাওয়া যায়নি','Location permission denied')), {timeout:10000});
+}
+
+/* ---------- ইভেন্ট ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]'); if(!t) return;
+  const a = t.dataset.act, v = t.dataset.v;
+  if(a==='close'){ if(t.classList.contains('modal-overlay') && e.target!==t) return; return closeAll(); }
+  if(a==='brand'||a==='price'||a==='type'){ st[a]=v; renderChips(); return renderBikes(); }
+  if(a==='div'){ st.div=v; st.limit=24; renderChips(); return renderShowrooms(); }
+  if(a==='more'){ st.limit+=24; return renderShowrooms(); }
+  if(a==='open') return openBike(v);
+  if(a==='near') return nearMe();
+  if(a==='goto') return $(t.dataset.id).scrollIntoView({behavior:'smooth'});
+  if(a==='lang'){ lang = lang==='bn'?'en':'bn'; try{ localStorage.setItem('lang',lang); }catch{} applyLang(); }
 });
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeAll(); });
+$('searchInput').addEventListener('input', e => { st.q=e.target.value.trim(); renderBikes(); });
+$('searchForm').addEventListener('submit', e => { e.preventDefault(); $('bikes').scrollIntoView({behavior:'smooth'}); });
+let clicks=0, timer; /* লোগোতে ৫ বার ক্লিক = অ্যাডমিন */
+$('mainLogo').addEventListener('click', e => { clicks++; clearTimeout(timer); if(clicks>=5){ e.preventDefault(); clicks=0; $('adminModal').classList.add('show'); } else timer=setTimeout(()=>clicks=0,2000); });
 
-window.loginAdmin = async function() {
-    const email = document.getElementById('adminEmail').value;
-    const pass = document.getElementById('adminPassword').value;
-    try {
-        await signInWithEmailAndPassword(auth, email, pass);
-        document.getElementById('adminError').textContent = "";
-    } catch (e) {
-        document.getElementById('adminError').textContent = "Invalid email or password!";
-    }
-};
-
-window.logoutAdmin = function() { signOut(auth); };
-
-onAuthStateChanged(auth, (user) => {
-    const loginSec = document.getElementById('adminLoginSection');
-    const dashSec = document.getElementById('adminDashboard');
-    
-    if (user) {
-        loginSec.style.display = 'none';
-        dashSec.style.display = 'block';
-        renderAdminBikeList();
-    } else {
-        loginSec.style.display = 'block';
-        dashSec.style.display = 'none';
-    }
-});
-
-// ১১. অ্যাডমিন প্যানেল থেকে বাইক এডিট
-function renderAdminBikeList() {
-    const list = document.getElementById('adminBikeList');
-    if(!list) return;
-    
-    list.innerHTML = bikes.map(b => `
-        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:10px; margin-bottom:5px; border-radius:8px;">
-            <span>${b.brand} ${b.name}</span>
-            <button class="btn-primary" style="padding:5px 10px; font-size:12px;" onclick="editBike('${b.id}')">Edit</button>
-        </div>
-    `).join('');
-}
-
-window.editBike = function(id) {
-    const bike = bikes.find(b => b.id === id);
-    if(!bike) return;
-    
-    currentEditingBikeId = id;
-    document.getElementById('editBikeName').value = bike.name;
-    document.getElementById('editBikePrice').value = bike.price;
-    document.getElementById('editBikeImage').value = bike.image || '';
-    document.getElementById('editBikeDesc').value = bike.desc || '';
-    
-    document.getElementById('adminBikeList').style.display = 'none';
-    document.getElementById('adminEditForm').style.display = 'block';
-};
-
-window.saveBikeEdit = async function() {
-    const name = document.getElementById('editBikeName').value;
-    const price = Number(document.getElementById('editBikePrice').value);
-    const image = document.getElementById('editBikeImage').value;
-    const desc = document.getElementById('editBikeDesc').value;
-    
-    try {
-        // ফায়ারবেসে আপডেট
-        const bikeRef = doc(db, "bikes", currentEditingBikeId);
-        await updateDoc(bikeRef, { name, price, image, desc });
-        
-        // লোকাল ডেটা আপডেট
-        const bikeIdx = bikes.findIndex(b => b.id === currentEditingBikeId);
-        if(bikeIdx > -1) {
-            bikes[bikeIdx] = { ...bikes[bikeIdx], name, price, image, desc };
-        }
-        
-        alert("Bike updated successfully!");
-        cancelEdit();
-        renderBikes();
-    } catch(e) {
-        // ফায়ারবেসে ডকুমেন্ট না থাকলে লোকালি আপডেট হবে (টেস্টিংয়ের জন্য)
-        const bikeIdx = bikes.findIndex(b => b.id === currentEditingBikeId);
-        if(bikeIdx > -1) {
-            bikes[bikeIdx] = { ...bikes[bikeIdx], name, price, image, desc };
-        }
-        alert("Updated locally (Database error)");
-        cancelEdit();
-        renderBikes();
-    }
-};
-
-window.cancelEdit = function() {
-    document.getElementById('adminBikeList').style.display = 'block';
-    document.getElementById('adminEditForm').style.display = 'none';
-};
-
-// স্টার্ট অ্যাপ
-document.getElementById('year').textContent = new Date().getFullYear();
-loadData();
+/* ---------- শুরু ---------- */
+const L_ = window.L; /* Leaflet (নামের সংঘর্ষ এড়াতে) */
+$('year').textContent = new Date().getFullYear();
+map = L_.map('map',{center:[23.8,90.4],zoom:7}); L_.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map); layer = L_.layerGroup().addTo(map);
+const refresh = async () => { const r = await loadRemote(); bikes = merge(BIKES, r.bikes); if(r.showrooms.length) showrooms = r.showrooms; renderAll(); };
+initAdmin({getBikes: () => bikes, refresh});
+applyLang(); refresh();
