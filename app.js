@@ -152,7 +152,7 @@ $('mainLogo').addEventListener('click', e => { clicks++; clearTimeout(timer); if
 /* ---------- শুরু ---------- */
 const L_ = window.L; /* Leaflet (নামের সংঘর্ষ এড়াতে) */
 $('year').textContent = new Date().getFullYear();
-map = L_.map('map',{center:[23.8,90.4],zoom:7}); L_.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map); layer = L_.layerGroup().addTo(map);
+map = L_.map('map',{center:[23.8,90.4],zoom:7,minZoom:6,maxBounds:[[19.5,86.5],[28,94.5]],maxBoundsViscosity:.9}); L_.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map); layer = (L_.markerClusterGroup ? L_.markerClusterGroup({maxClusterRadius:50,showCoverageOnHover:false}) : L_.layerGroup()).addTo(map);
 const labels = () => $('map').classList.toggle('show-labels', map.getZoom() >= 9); map.on('zoomend', labels); labels();
 const refresh = async () => { const r = await loadRemote(); bikes = merge(BIKES, r.bikes); if(r.showrooms.length) showrooms = r.showrooms; renderAll(); };
 initAdmin({getBikes: () => bikes, refresh});
