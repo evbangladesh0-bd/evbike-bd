@@ -1,83 +1,134 @@
-// firebase.js — ডেটাবেস, অ্যাডমিন লগইন, বাইক এডিট ও ছবি আপলোড
-import {initializeApp} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import {getFirestore,collection,getDocs,doc,setDoc} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import {getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import {getStorage,ref,uploadBytes,getDownloadURL} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+// firebase.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, addDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
-            apiKey: "AIzaSyB1KRjfU1QYuVN6GCNAUybmNPpE8Qd_23E",
-            authDomain: "ev-bike-53505.firebaseapp.com",
-            projectId: "ev-bike-53505",
-            storageBucket: "ev-bike-53505.firebasestorage.app",
-            messagingSenderId: "654742888648",
-            appId: "1:654742888648:web:e7401469c0b5385c43c5fd"
-        };
-const app = initializeApp(firebaseConfig), db = getFirestore(app), auth = getAuth(app), storage = getStorage(app);
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    apiKey: "AIzaSyB1KRjfU1QYuVN6GCNAUybmNPpE8Qd_23E",
+    authDomain: "ev-bike-53505.firebaseapp.com",
+    projectId: "ev-bike-53505",
+    storageBucket: "ev-bike-53505.firebasestorage.app",
+    messagingSenderId: "654742888648",
+    appId: "1:654742888648:web:e7401469c0b5385c43c5fd"
+};
 
-/* ডেটা লোড (ব্যর্থ হলে খালি — তখন data.js চলবে) */
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// ডেটা লোড
 export async function loadRemote(){
-  try {
-    const [b, s] = await Promise.all([getDocs(collection(db,'bikes')), getDocs(collection(db,'showrooms'))]);
-    return {bikes: b.docs.map(d => ({id:d.id, ...d.data()})), showrooms: s.docs.map(d => { const x = d.data(); return {...x, lat:+x.lat, lng:+x.lng}; })};
-  } catch { return {bikes:[], showrooms:[]}; }
+    let bikes = [], showrooms = [];
+    try {
+        const bSnap = await getDocs(collection(db, "bikes"));
+        bSnap.forEach(d => bikes.push({id: d.id, ...d.data()}));
+        const sSnap = await getDocs(collection(db, "showrooms"));
+        sSnap.forEach(d => showrooms.push({id: d.id, ...d.data()}));
+    } catch(e) { console.log("Firebase Load Error", e); }
+    return { bikes, showrooms };
 }
 
-/* অ্যাডমিন: লগইন + ড্যাশবোর্ড */
-export function initAdmin({getBikes, refresh}){
-  const dash = $('adminDash'), modal = $('adminModal');
-  let editing = null;
-  const say = m => { const e = $('fbMsg'); if(e) e.textContent = m; };
+// লিস্টিং জমা দেওয়া
+export async function submitListing(data) {
+    return await addDoc(collection(db, "applications"), {
+        ...data, status: 'pending', date: new Date().toISOString()
+    });
+}
 
-  const list = () => { editing = null;
-    dash.innerHTML = `<h2 class="fb-title">Admin Dashboard</h2><p id="fbMsg" class="fb-msg"></p>
-      <button class="btn-primary fb-btn" data-fb="new">+ New bike</button>
-      ${getBikes().map(b => `<div class="fb-row"><span>${esc(b.brand)} ${esc(b.name)} — ৳${esc(b.price)}</span><button class="btn-primary" data-fb="edit" data-id="${esc(b.id)}">Edit</button></div>`).join('')}
-      <button class="btn-outline fb-btn" data-fb="logout">Logout</button>`; };
+// অ্যাডমিন প্যানেল
+export function initAdmin({ getBikes, refresh }) {
+    const $ = id => document.getElementById(id);
+    let isLogin = false;
 
-  const form = b => { editing = b;
-    const f = (k, label, type='text') => `<label class="fb-lbl">${label}</label><input class="admin-input" id="fb_${k}" type="${type}" value="${esc(b[k] ?? '')}">`;
-    dash.innerHTML = `<h2 class="fb-title">${b.id ? 'Edit bike' : 'New bike'}</h2><p id="fbMsg" class="fb-msg"></p>
-      ${f('brand','Brand')}${f('name','Model')}${f('price','Price (৳)','number')}${f('range','Range (km)','number')}${f('speed','Top speed (km/h)','number')}${f('motor','Motor (W)','number')}
-      <label class="fb-lbl">Type</label><select class="admin-input" id="fb_type">${['Scooter','Sport','Motorcycle'].map(t=>`<option ${b.type===t?'selected':''}>${t}</option>`).join('')}</select>
-      <label class="fb-lbl">Description</label><textarea class="admin-input" id="fb_desc" rows="4">${esc(b.desc || '')}</textarea>
-      <label class="fb-lbl">Image</label>${b.image ? `<img src="${esc(b.image)}" alt="" class="fb-prev">` : ''}
-      <input type="file" id="fb_file" accept="image/jpeg,image/png,image/webp" class="admin-input">
-      ${f('image','…অথবা ছবির লিংক (https://)')}
-      <button class="btn-primary fb-btn" data-fb="save">Save</button>
-      ${b.id ? '<button class="btn-outline fb-btn" style="color:var(--danger)" data-fb="del">Delete</button>' : ''}
-      <button class="btn-outline fb-btn" data-fb="cancel">Cancel</button>`; };
+    // Login
+    $('admLoginBtn').addEventListener('click', async () => {
+        try {
+            await signInWithEmailAndPassword(auth, $('admEmail').value, $('admPass').value);
+        } catch(e) { $('admMsg').textContent = e.message; }
+    });
 
-  async function save(){
-    const g = k => $('fb_'+k).value.trim();
-    const data = {brand:g('brand'), name:g('name'), price:+g('price'), range:+g('range'), speed:+g('speed'), motor:+g('motor'), type:$('fb_type').value, desc:g('desc'), image:g('image')};
-    if(!data.brand || !data.name || !(data.price > 0)) return say('Brand, model ও price দিন');
-    if(data.image && !/^https:\/\//.test(data.image)) return say('ছবির লিংক https:// দিয়ে শুরু হতে হবে');
+    // Logout
+    $('admLogoutBtn').addEventListener('click', () => signOut(auth));
+
+    // Tabs
+    $('tabBikes').addEventListener('click', () => renderAdminBikes(getBikes(), refresh));
+    $('tabRequests').addEventListener('click', () => renderAdminRequests(refresh));
+
+    // Auth State
+    onAuthStateChanged(auth, user => {
+        isLogin = !!user;
+        $('adminLogin').style.display = isLogin ? 'none' : 'block';
+        $('adminPanel').style.display = isLogin ? 'block' : 'none';
+        if(isLogin) renderAdminBikes(getBikes(), refresh);
+    });
+}
+
+async function renderAdminBikes(bikes, refresh) {
+    const content = document.getElementById('adminContent');
+    content.innerHTML = bikes.map(b => `
+        <div class="fb-row">
+            <span>${b.brand} ${b.name}</span>
+            <button class="btn-primary" onclick="editBike('${b.id}')">Edit</button>
+        </div>
+    `).join('');
+}
+
+window.editBike = async function(id) {
+    const b = window.BIKES.find(x => x.id === id);
+    if(!b) return;
+    const price = prompt("New Price:", b.price);
+    if(price) {
+        try {
+            await updateDoc(doc(db, "bikes", id), { price: Number(price) });
+            alert("Updated!"); location.reload();
+        } catch(e) { alert("Error: " + e.message); }
+    }
+}
+
+async function renderAdminRequests(refresh) {
+    const content = document.getElementById('adminContent');
+    content.innerHTML = "Loading...";
     try {
-      const file = $('fb_file').files[0];
-      if(file){
-        if(!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 2*1024*1024) return say('ছবি JPG/PNG/WebP এবং ২ MB-এর নিচে হতে হবে');
-        say('ছবি আপলোড হচ্ছে…');
-        const r = ref(storage, `bikes/${Date.now()}-${file.name.replace(/[^\w.-]/g,'_')}`);
-        await uploadBytes(r, file); data.image = await getDownloadURL(r);
-      }
-      say('সেভ হচ্ছে…');
-      await setDoc(doc(db,'bikes', editing.id || 'b'+Date.now()), data, {merge:true});
-      await refresh(); list(); say('Saved ✓');
-    } catch(e) { say('Error: ' + (e.code || e.message)); }
-  }
+        const snap = await getDocs(collection(db, "applications"));
+        let html = "";
+        snap.forEach(d => {
+            const data = d.data();
+            html += `<div class="fb-row" style="flex-direction:column; align-items:flex-start;">
+                <b>${data.name} (${data.brand})</b>
+                <small>${data.address}, ${data.area} - ${data.phone}</small>
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button class="btn-primary" onclick="approveReq('${d.id}')">Approve</button>
+                    <button class="btn-outline" onclick="deleteReq('${d.id}')">Delete</button>
+                </div>
+            </div>`;
+        });
+        content.innerHTML = html || "No pending requests.";
+    } catch(e) { content.innerHTML = "Error loading requests."; }
+}
 
-  modal.addEventListener('click', async e => {
-    const t = e.target.closest('[data-fb]'); if(!t) return;
-    const a = t.dataset.fb, bike = getBikes().find(b => b.id === t.dataset.id);
-    if(a === 'login'){ $('adminErr').textContent = '…'; try { await signInWithEmailAndPassword(auth, $('adminEmail').value, $('adminPass').value); $('adminErr').textContent = ''; } catch { $('adminErr').textContent = 'ভুল ইমেইল বা পাসওয়ার্ড!'; } }
-    if(a === 'logout') signOut(auth);
-    if(a === 'new') form({type:'Scooter'});
-    if(a === 'edit' && bike) form(bike);
-    if(a === 'cancel') list();
-    if(a === 'save') save();
-    if(a === 'del' && editing?.id && confirm('এই বাইক মুছে ফেলবেন?')){ try { await setDoc(doc(db,'bikes',editing.id), {deleted:true}, {merge:true}); await refresh(); list(); say('Deleted'); } catch(er){ say('Error: ' + (er.code||er.message)); } }
-  });
-  onAuthStateChanged(auth, u => { $('adminLogin').style.display = u ? 'none' : 'block'; dash.style.display = u ? 'block' : 'none'; if(u) list(); });
+window.approveReq = async function(id) {
+    try {
+        const reqDoc = await getDocs(collection(db, "applications"));
+        let data;
+        reqDoc.forEach(d => { if(d.id === id) data = d.data(); });
+        if(!data) return;
+
+        // Add to showrooms
+        await addDoc(collection(db, "showrooms"), {
+            brand: data.brand, name: data.name, area: data.area, division: data.division,
+            phone: data.phone, address: data.address, lat: 23.8, lng: 90.4, verified: false
+        });
+
+        // Delete request
+        await deleteDoc(doc(db, "applications", id));
+        alert("Approved and added to showrooms!");
+        renderAdminRequests();
+    } catch(e) { alert("Error: " + e.message); }
+}
+
+window.deleteReq = async function(id) {
+    if(confirm("Reject this request?")) {
+        await deleteDoc(doc(db, "applications", id));
+        renderAdminRequests();
+    }
 }
