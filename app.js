@@ -10,10 +10,9 @@ const tk = n => '৳' + nf(n);
 const num = p => { const d = String(p||'').replace(/\D/g,''); return d ? (d.startsWith('880') ? d : '880' + d.replace(/^0/,'')) : ''; };
 const tel = p => 'tel:+' + num(p), wa = p => num(p) ? 'https://wa.me/' + num(p) : '';
 const dir = s => `https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`;
-const safeImg = u => /^https:\/\//.test(u||'') ? esc(u) : '';
+const safeImg = u => /^https:\/\//.test(u||'') ? esc(u) : (u && u.startsWith('data:image') ? u : '');
 function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove('show'),2200); }
 
-// এখানে হোম পেজের টেক্সট আপডেট করা হয়েছে
 const I18N = {
   nav_bikes:['বাইক','Bikes'], nav_map:['ম্যাপ','Map'], nav_show:['শোরুম','Showrooms'], brands:['ব্র্যান্ড','Brands'],
   badge:['🌿 যাচাইকৃত শোরুম • সব ব্র্যান্ড • এক জায়গায়','🌿 Verified Showrooms • All Brands • One Place'],
@@ -108,7 +107,7 @@ function openBike(id){
   const desc = b.desc || L(`${b.brand} ${b.name} — ${nf(b.range)} কিমি রেঞ্জ ও ${nf(b.speed)} কিমি/ঘণ্টা টপ স্পিড। শোরুমে টেস্ট রাইড নিয়ে দাম, স্টক ও ওয়ারেন্টি লিখিতভাবে নিশ্চিত করুন।`, `${b.brand} ${b.name} — ${nf(b.range)} km range and ${nf(b.speed)} km/h top speed. Take a test ride and confirm price, stock and warranty in writing.`);
   const msg = encodeURIComponent(`Hi, I want to know about ${b.brand} ${b.name}`);
   $('bikeModalBody').innerHTML = `<button class="modal-close" data-act="close">✕</button>
-    ${safeImg(b.image)?`<img src="${safeImg(b.image)}" alt="${esc(b.name)}" style="border-radius:12px;margin-bottom:14px">`:''}
+    ${safeImg(b.image)?`<img src="${safeImg(b.image)}" alt="${esc(b.name)}" style="border-radius:12px;margin-bottom:14px; max-height:250px; width:100%; object-fit:cover;">`:''}
     <span style="color:var(--brand);font-weight:800">${esc(b.brand)} • ${esc(typeName(b.type))}</span>
     <h2 style="font-size:26px;font-weight:800">${esc(b.name)}</h2><div style="font-size:26px;font-weight:800;margin-top:6px">${tk(b.price)}</div>
     <div class="m-stats"><div><small>${L('রেঞ্জ','Range')}</small>${nf(b.range)} ${L('কিমি','km')}</div><div><small>${L('টপ স্পিড','Top speed')}</small>${nf(b.speed)}</div><div><small>${L('মোটর','Motor')}</small>${nf(b.motor)}W</div><div><small>${L('ধরন','Type')}</small>${esc(typeName(b.type))}</div></div>
@@ -131,7 +130,6 @@ function nearMe(){
   }, () => toast(L('লোকেশনের অনুমতি পাওয়া যায়নি','Location permission denied')), {timeout:10000});
 }
 
-// Event Listeners
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if(!t) return;
   const a = t.dataset.act, v = t.dataset.v;
@@ -150,11 +148,9 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') closeAll(); });
 $('searchInput').addEventListener('input', e => { st.q=e.target.value.trim(); renderBikes(); });
 $('searchForm').addEventListener('submit', e => { e.preventDefault(); $('bikes').scrollIntoView({behavior:'smooth'}); });
 
-// 5-click Admin Access
 let clicks=0, timer; 
 $('mainLogo').addEventListener('click', e => { clicks++; clearTimeout(timer); if(clicks>=5){ e.preventDefault(); clicks=0; $('adminModal').classList.add('show'); } else timer=setTimeout(()=>clicks=0,2000); });
 
-// Listing Form Submit
 $('listingForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
@@ -174,7 +170,6 @@ $('listingForm').addEventListener('submit', async (e) => {
     }
 });
 
-// Init
 const L_ = window.L;
 $('year').textContent = new Date().getFullYear();
 map = L_.map('map',{center:[23.8,90.4],zoom:7,minZoom:6,maxBounds:[[19.5,86.5],[28,94.5]],maxBoundsViscosity:.9}); L_.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map); layer = (L_.markerClusterGroup ? L_.markerClusterGroup({maxClusterRadius:50,showCoverageOnHover:false}) : L_.layerGroup()).addTo(map);
