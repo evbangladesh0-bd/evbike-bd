@@ -69,7 +69,6 @@ function renderAdminBikes() {
 }
 window.renderAdminBikes = renderAdminBikes;
 
-// ** নতুন আপডেট: ছবি আপলোড অপশন সহ **
 window.editBike = function (id) {
     const b = ctx.getBikes().find(x => x.id === id) || { type: 'Scooter' };
     const f = (k, label, type = 'text') => `<label class="fb-lbl">${label}</label><input class="admin-input" id="eb_${k}" type="${type}" value="${esc(b[k])}">`;
@@ -94,16 +93,36 @@ window.editBike = function (id) {
 
     $('eb_image_file').addEventListener('change', function(e) {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-                $('eb_image').value = ev.target.result;
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 800; 
+                let width = img.width, height = img.height;
+
+                if (width > MAX_WIDTH) {
+                    height = Math.round((height * MAX_WIDTH) / width);
+                    width = MAX_WIDTH;
+                }
+                canvas.width = width; 
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+                $('eb_image').value = compressedBase64;
                 const prev = $('eb_img_preview');
-                prev.src = ev.target.result;
+                prev.src = compressedBase64;
                 prev.style.display = 'block';
             };
-            reader.readAsDataURL(file);
-        }
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
     });
 };
 
