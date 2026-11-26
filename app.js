@@ -105,9 +105,9 @@ function openBike(id){
   let l = showrooms.filter(s => s.brand.includes(b.brand) || b.brand.includes(s.brand));
   if(st.loc) l = l.map(s=>({...s,_d:dist(st.loc.lat,st.loc.lng,s.lat,s.lng)})).sort((a,c)=>a._d-c._d);
   const desc = b.desc || L(`${b.brand} ${b.name} — ${nf(b.range)} কিমি রেঞ্জ ও ${nf(b.speed)} কিমি/ঘণ্টা টপ স্পিড। শোরুমে টেস্ট রাইড নিয়ে দাম, স্টক ও ওয়ারেন্টি লিখিতভাবে নিশ্চিত করুন।`, `${b.brand} ${b.name} — ${nf(b.range)} km range and ${nf(b.speed)} km/h top speed. Take a test ride and confirm price, stock and warranty in writing.`);
-  const msg = encodeURIComponent(`Hi, I want to know about ${b.brand} ${b.name}`);
+  
   $('bikeModalBody').innerHTML = `<button class="modal-close" data-act="close">✕</button>
-    ${safeImg(b.image)?`<img src="${safeImg(b.image)}" alt="${esc(b.name)}" style="border-radius:12px;margin-bottom:14px; max-height:250px; width:100%; object-fit:cover;">`:''}
+    ${safeImg(b.image)?`<img src="${safeImg(b.image)}" alt="${esc(b.name)}" style="border-radius:12px;margin-bottom:14px; width:100%; max-height:350px; object-fit:contain; background:#f8f9fa;">`:''}
     <span style="color:var(--brand);font-weight:800">${esc(b.brand)} • ${esc(typeName(b.type))}</span>
     <h2 style="font-size:26px;font-weight:800">${esc(b.name)}</h2><div style="font-size:26px;font-weight:800;margin-top:6px">${tk(b.price)}</div>
     <div class="m-stats"><div><small>${L('রেঞ্জ','Range')}</small>${nf(b.range)} ${L('কিমি','km')}</div><div><small>${L('টপ স্পিড','Top speed')}</small>${nf(b.speed)}</div><div><small>${L('মোটর','Motor')}</small>${nf(b.motor)}W</div><div><small>${L('ধরন','Type')}</small>${esc(typeName(b.type))}</div></div>
