@@ -175,3 +175,20 @@ body:has(.modal-overlay.show) .wa-fab { display: none; }
 .sites div a { display: block; padding: 9px 12px; border-radius: 8px; font-weight: 600; font-size: 14px; }
 .sites div a:hover { background: var(--surface-2); }
 .flinks { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+
+/* header fit + logo menu + clickable map legend */
+.logo { flex: 0 0 auto; } .logo img { max-width: none; }
+.sites summary { width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border-radius: 11px; }
+.sites div { min-width: 200px; }
+.sites div a { display: flex; align-items: center; gap: 10px; }
+.si { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; flex: none; }
+.si svg { width: 18px; height: 18px; }
+@media (max-width: 480px) {
+  .logo img { height: 38px !important; }
+  .header-actions { gap: 6px; }
+  .icon-btn, .sites summary { width: 36px; height: 36px; }
+  .lang-btn { padding: 6px 9px; }
+}
+.legend span[data-act] { cursor: pointer; padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; background: #fff; user-select: none; }
+.legend span[data-act].on { border-color: var(--bt); color: var(--bt); font-weight: 700; background: var(--surface-2); }
+.legend.has-sel span[data-act]:not(.on) { opacity: .5; }
