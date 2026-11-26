@@ -3,7 +3,7 @@ import {loadRemote, initAdmin, submitListing} from './firebase.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let lang = 'bn'; try { lang = localStorage.getItem('lang') === 'en' ? 'en' : 'bn'; } catch {}
+let lang = 'en'; try { lang = localStorage.getItem('lang') === 'bn' ? 'bn' : 'en'; } catch {}
 const L = (b, e) => lang === 'bn' ? b : e;
 const nf = n => (+n || 0).toLocaleString(lang === 'bn' ? 'bn-BD' : 'en-US', {maximumFractionDigits:0});
 const tk = n => '৳' + nf(n);
@@ -36,7 +36,7 @@ function applyLang(){
 
 const merge = (base, rem) => { const m = new Map(base.map(b => [b.id, b])); rem.forEach(r => m.set(r.id, {...m.get(r.id), ...r})); return [...m.values()].filter(b => !b.deleted); };
 let bikes = BIKES.slice(), showrooms = SHOWROOMS.slice();
-const st = {brand:'all', price:'all', type:'all', div:'all', q:'', limit:24, loc:null};
+const st = {mapBrand:'', brand:'all', price:'all', type:'all', div:'all', q:'', limit:24, loc:null};
 const PRICES = [['all','সব দাম','Any price'],['u1','১ লাখের নিচে','Under 1 lakh'],['m','১–১.৫ লাখ','1–1.5 lakh'],['o','১.৫ লাখ+','1.5 lakh+']];
 const TYPES = [['all','সব ধরন','All types'],['Scooter','স্কুটার','Scooter'],['Sport','স্পোর্ট','Sport'],['Motorcycle','মোটরসাইকেল','Motorcycle']];
 const typeName = t => { const x = TYPES.find(y => y[0]===t); return x ? L(x[1],x[2]) : t; };
@@ -44,11 +44,11 @@ const priceOk = p => st.price==='all' || (st.price==='u1'&&p<100000) || (st.pric
 
 const chip = (act, v, label, on) => `<button class="chip ${on?'active':''}" data-act="${act}" data-v="${esc(v)}">${esc(label)}</button>`;
 function renderChips(){
-  const brands = ['all', ...new Set(bikes.map(b=>b.brand))].sort((a,b)=>a==='all'?-1:a.localeCompare(b));
+  const brands = ['all', ...new Set(bikes.map(b=>b.brand))].sort((a,b)=>a==='all'?-1:b==='all'?1:a.localeCompare(b));
   $('brandChips').innerHTML = brands.map(b=>chip('brand',b,b==='all'?L('সব ব্র্যান্ড','All brands'):b,st.brand===b)).join('');
   $('priceChips').innerHTML = PRICES.map(([v,b,e])=>chip('price',v,L(b,e),st.price===v)).join('');
   $('typeChips').innerHTML = TYPES.filter(([v])=>v==='all'||bikes.some(b=>b.type===v)).map(([v,b,e])=>chip('type',v,L(b,e),st.type===v)).join('');
-  const divs = ['all', ...new Set(showrooms.map(s=>s.division).filter(Boolean))].sort((a,b)=>a==='all'?-1:a.localeCompare(b));
+  const divs = ['all', ...new Set(showrooms.map(s=>s.division).filter(Boolean))].sort((a,b)=>a==='all'?-1:b==='all'?1:a.localeCompare(b));
   $('divChips').innerHTML = divs.map(d=>chip('div',d,d==='all'?L('সব বিভাগ','All divisions'):d,st.div===d)).join('');
 }
 function renderBikes(){
@@ -88,11 +88,16 @@ function renderShowrooms(){
   $('showroomGrid').innerHTML = l.slice(0, st.limit).map(srCard).join('') || `<div class="empty">${L('কোনো শোরুম নেই','No showrooms')}</div>`;
   $('moreBtn').style.display = l.length > st.limit ? 'block' : 'none';
   layer.clearLayers();
-  l.forEach(s => { if(isFinite(s.lat)&&isFinite(s.lng)) L_.marker([s.lat,s.lng],{icon:pinIcon(s)}).bindPopup(`<b>${esc(s.name)}</b><br>${esc(s.address)}<br><a href="${dir(s)}" target="_blank" rel="noopener">Direction</a>${s.phone?`<a href="${tel(s.phone)}">Call</a>`:''}${wa(s.phone)?`<a href="${wa(s.phone)}" target="_blank" rel="noopener">WhatsApp</a>`:''}`).addTo(layer); });
+  l.filter(s => !st.mapBrand || s.brand === st.mapBrand).forEach(s => { if(isFinite(s.lat)&&isFinite(s.lng)) L_.marker([s.lat,s.lng],{icon:pinIcon(s)}).bindPopup(`<b>${esc(s.name)}</b><br>${esc(s.address)}<br><a href="${dir(s)}" target="_blank" rel="noopener">Direction</a>${s.phone?`<a href="${tel(s.phone)}">Call</a>`:''}${wa(s.phone)?`<a href="${wa(s.phone)}" target="_blank" rel="noopener">WhatsApp</a>`:''}`).addTo(layer); });
+  if(st.mapBrand){ try{ map.fitBounds(layer.getBounds().pad(.2)); }catch{} }
+}
+function renderLegend(){
+  const lg = $('mapLegend'); if(!lg) return;
+  lg.classList.toggle('has-sel', !!st.mapBrand);
+  lg.innerHTML = [...new Set(showrooms.map(s=>s.brand))].sort().map(b=>`<span data-act="legend" data-v="${esc(b)}" class="${st.mapBrand===b?'on':''}"><i style="background:${brandColor(b)}"></i>${esc(b)}</span>`).join('');
 }
 function renderAll(){
-  const lg = $('mapLegend'); if(lg) lg.innerHTML = [...new Set(showrooms.map(s=>s.brand))].sort().map(b=>`<span><i style="background:${brandColor(b)}"></i>${esc(b)}</span>`).join('');
-  renderChips(); renderBikes(); renderShowrooms();
+  renderLegend(); renderChips(); renderBikes(); renderShowrooms();
   $('statBikes').textContent = nf(bikes.length)+'+'; $('statBrands').textContent = nf(new Set(bikes.map(b=>b.brand)).size)+'+'; $('statShowrooms').textContent = nf(showrooms.length)+'+';
 }
 
@@ -108,7 +113,7 @@ function openBike(id){
     <h2 style="font-size:26px;font-weight:800">${esc(b.name)}</h2><div style="font-size:26px;font-weight:800;margin-top:6px">${tk(b.price)}</div>
     <div class="m-stats"><div><small>${L('রেঞ্জ','Range')}</small>${nf(b.range)} ${L('কিমি','km')}</div><div><small>${L('টপ স্পিড','Top speed')}</small>${nf(b.speed)}</div><div><small>${L('মোটর','Motor')}</small>${nf(b.motor)}W</div><div><small>${L('ধরন','Type')}</small>${esc(typeName(b.type))}</div></div>
     <p style="color:var(--muted);white-space:pre-line">${esc(desc)}</p>
-    <div class="modal-actions"><a class="p" href="https://evcharger.bd" target="_blank" rel="noopener">🔌 ${L('এই বাইকের চার্জার দেখুন','Find a charger')}</a><a href="https://evcharge.bd" target="_blank" rel="noopener">⚡ ${L('পথে চার্জিং স্টেশন','Charging stations')}</a></div>
+    <div class="modal-actions"><a class="p" href="https://evcharger.bd" target="_blank" rel="noopener">🔌 ${L('এই বাইকের চার্জার দেখুন','Find a charger')}</a></div>
     <h4>${esc(b.brand)} ${L('-এর শোরুম',' showrooms')} (${nf(l.length)})</h4>
     <div class="showroom-grid">${l.slice(0,6).map(srCard).join('') || `<div class="empty">${L('এই ব্র্যান্ডের শোরুম এখনো তালিকায় নেই','No showrooms listed for this brand yet')}</div>`}</div>`;
   $('bikeModal').classList.add('show'); document.body.style.overflow='hidden';
@@ -133,6 +138,7 @@ document.addEventListener('click', e => {
   if(a==='close'){ if(t.classList.contains('modal-overlay') && e.target!==t) return; return closeAll(); }
   if(a==='brand'||a==='price'||a==='type'){ st[a]=v; renderChips(); return renderBikes(); }
   if(a==='div'){ st.div=v; st.limit=24; renderChips(); return renderShowrooms(); }
+  if(a==='legend'){ st.mapBrand = st.mapBrand===v ? '' : v; renderLegend(); return renderShowrooms(); }
   if(a==='more'){ st.limit+=24; return renderShowrooms(); }
   if(a==='open') return openBike(v);
   if(a==='near') return nearMe();
