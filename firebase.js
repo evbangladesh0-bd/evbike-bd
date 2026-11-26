@@ -69,26 +69,53 @@ function renderAdminBikes() {
 }
 window.renderAdminBikes = renderAdminBikes;
 
+// ** নতুন আপডেট: ছবি আপলোড অপশন সহ **
 window.editBike = function (id) {
     const b = ctx.getBikes().find(x => x.id === id) || { type: 'Scooter' };
     const f = (k, label, type = 'text') => `<label class="fb-lbl">${label}</label><input class="admin-input" id="eb_${k}" type="${type}" value="${esc(b[k])}">`;
+    
+    const imgSection = `
+        <label class="fb-lbl">Image Upload</label>
+        <div style="margin-bottom:10px; display:flex; gap:10px; align-items:center;">
+            <input type="file" id="eb_image_file" accept="image/*" style="font-size:13px; width:100%;">
+            <img id="eb_img_preview" src="${esc(b.image)}" style="height:40px; border-radius:5px; display:${b.image ? 'block' : 'none'};" onerror="this.style.display='none'">
+        </div>
+        <input class="admin-input" id="eb_image" type="hidden" value="${esc(b.image)}">
+    `;
+
     content().innerHTML = `${f('brand', 'Brand')}${f('name', 'Name')}${f('price', 'Price (৳)', 'number')}${f('range', 'Range (km)', 'number')}${f('speed', 'Top speed (km/h)', 'number')}${f('motor', 'Motor (W)', 'number')}
         <label class="fb-lbl">Type</label><select class="admin-input" id="eb_type">${['Scooter', 'Sport', 'Motorcycle'].map(t => `<option ${b.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
-        ${f('image', 'Image URL (https://...)', 'url')}
+        ${imgSection}
         <label class="fb-lbl">Description</label><textarea class="admin-input" id="eb_desc" rows="3">${esc(b.desc)}</textarea>
         <button class="btn-primary fb-btn" onclick="saveBike('${esc(id)}')">Save</button>
         <button class="btn-outline fb-btn" onclick="renderAdminBikes()">Cancel</button>
         ${id ? `<button class="btn-outline fb-btn" style="color:var(--danger)" onclick="hideBike('${esc(id)}')">এই বাইক লুকান</button>` : ''}
         <p class="fb-msg" id="ebMsg"></p>`;
+
+    $('eb_image_file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                $('eb_image').value = ev.target.result;
+                const prev = $('eb_img_preview');
+                prev.src = ev.target.result;
+                prev.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
 };
 
 window.saveBike = async function (id) {
     const v = k => $('eb_' + k).value.trim();
     const data = { brand: v('brand'), name: v('name'), type: v('type'), image: v('image'), desc: v('desc'),
         price: Number(v('price')), range: Number(v('range')), speed: Number(v('speed')), motor: Number(v('motor')) };
+    
     if (!data.brand || !data.name || !(data.price > 0)) return $('ebMsg').textContent = 'Brand, name ও price দিন';
-    if (data.image && !/^https:\/\//.test(data.image)) return $('ebMsg').textContent = 'ছবির লিংক https:// দিয়ে শুরু হতে হবে';
+    
     try {
+        $('ebMsg').textContent = 'Saving...';
         if (id) await setDoc(doc(db, "bikes", id), data, { merge: true });
         else await addDoc(collection(db, "bikes"), data);
         await ctx.refresh(); renderAdminBikes();
